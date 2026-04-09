@@ -1,0 +1,895 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1.0,maximum-scale=1.0,user-scalable=no">
+<title>🎲 大湾区大富翁 V1.8</title>
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+:root{--bg:#f5f0e8;--bg2:#e8e0d5;--accent:#d4a574;--text:#4a3f35;--card:#fffdf8;--border:rgba(212,165,116,0.3)}
+html,body{height:100%;overflow:hidden;background:linear-gradient(135deg,var(--bg),var(--bg2));font-family:-apple-system,'PingFang SC',sans-serif}
+#game{width:100vw;height:100vh;display:none;flex-direction:column}
+#lobby{width:100vw;height:100vh;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:20px}
+#lobby h1{font-size:clamp(26px,7vw,40px);color:var(--text);margin-bottom:6px}
+#lobby p{color:#7a6f65;font-size:13px;margin-bottom:20px}
+.form{width:100%;max-width:280px;display:flex;flex-direction:column;gap:10px}
+.form input{padding:14px;background:var(--card);border:1.5px solid var(--border);border-radius:12px;color:var(--text);font-size:16px}
+.btn{padding:14px;background:linear-gradient(135deg,var(--accent),#e8b872);border:none;border-radius:14px;color:#fff;font-size:16px;font-weight:600;cursor:pointer}
+#top{background:var(--card);padding:6px 10px;border-bottom:1px solid var(--border);display:flex;justify-content:space-between;align-items:center;z-index:100;flex-shrink:0}
+#top h1{color:var(--text);font-size:12px}
+.st{display:flex;gap:4px}
+.pcard{background:rgba(212,165,116,0.08);border:1.5px solid transparent;padding:3px 8px;border-radius:8px;font-size:9px;line-height:1.3}
+.pcard.on{border-color:var(--accent)}
+.m{color:var(--accent);font-weight:700}
+.ap{color:#27ae60;font-weight:700}
+#mid{flex:1;position:relative;background:#e8e0d5;min-height:0;overflow:hidden}
+#scene{width:100%;height:100%}
+#bot{background:var(--card);padding:8px;border-top:1px solid var(--border);z-index:100;flex-shrink:0}
+.rw{display:flex;align-items:center;justify-content:center;gap:6px}
+.btn2{padding:10px 16px;border:none;border-radius:10px;font-size:12px;font-weight:600;cursor:pointer;min-height:44px}
+.b1{background:linear-gradient(135deg,var(--accent),#e8b872);color:#fff}
+.b2{background:#7cb87c;color:#fff}
+.b3{background:#f5f0e8;color:var(--text);border:1px solid var(--border)}
+#info{position:absolute;top:5px;right:50px;background:var(--card);border:1px solid var(--border);border-radius:10px;width:140px;display:none;z-index:100;max-height:280px;overflow-y:auto;font-size:10px}
+#info.show{display:block}
+#info h3{color:var(--accent);font-size:11px;padding:8px 10px;border-bottom:1px solid var(--border)}
+.pi{padding:8px 10px;font-size:10px}
+#ver{position:absolute;top:5px;left:10px;background:var(--card);border:1px solid var(--border);border-radius:8px;padding:4px 8px;font-size:10px;z-index:100}
+#year{position:absolute;top:5px;left:60px;background:linear-gradient(135deg,#d4a574,#e8b872);border-radius:8px;padding:4px 8px;font-size:10px;font-weight:600;color:#fff;z-index:100}
+#modal{position:fixed;inset:0;background:rgba(0,0,0,.4);display:none;align-items:center;justify-content:center;z-index:200}
+#modal.show{display:flex}
+#mb{background:var(--card);border-radius:18px;padding:24px;max-width:300px;width:90%;text-align:center}
+#mb h2{color:var(--text);font-size:17px;margin-bottom:8px}
+#mb p{color:#7a6f65;font-size:13px}
+</style>
+</head>
+<body>
+
+<div id="lobby">
+  <h1>🎲 大湾区大富翁</h1>
+  <p>V1.8 3D版</p>
+  <div style="background:rgba(212,165,116,0.15);border:1px solid var(--border);border-radius:12px;padding:12px;margin-bottom:16px;text-align:center;">
+    <div style="font-size:13px;color:var(--text);margin-bottom:8px;">🎉 <strong>V2.0 多人在线版已发布！</strong></div>
+    <button class="btn" style="padding:10px;font-size:13px;" onclick="window.location.href='/'">🌐 进入多人版本</button>
+  </div>
+  <div class="form">
+    <input id="nm" placeholder="你的名字（可选）" value="">
+    <button class="btn" onclick="start()">🎮 开始游戏</button>
+  </div>
+</div>
+
+<div id="game">
+  <div id="top">
+    <h1>🎲 大湾区大富翁</h1>
+    <div class="st" id="st"></div>
+  </div>
+  <div id="mid">
+    <div id="scene"></div>
+    <div id="ver">V1.8</div>
+    <div id="year">📅 1990年</div>
+    <button style="position:absolute;top:5px;right:10px;z-index:100;background:var(--card);border:1px solid var(--border);border-radius:8px;padding:4px 8px;cursor:pointer;font-size:12px" onclick="document.getElementById('info').classList.toggle('show')">📊</button>
+    <div id="info"><h3>状态</h3><div id="il"></div></div>
+    <!-- 城市信息面板 -->
+    <div id="city-panel" style="position:absolute;left:10px;right:10px;bottom:80px;background:var(--card);border:1px solid var(--border);border-radius:16px;padding:16px;z-index:90;display:none;box-shadow:0 4px 20px rgba(0,0,0,0.1);">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;">
+        <h3 id="city-name" style="color:var(--text);font-size:18px;margin:0;"></h3>
+        <button onclick="document.getElementById('city-panel').style.display='none'" style="background:none;border:none;font-size:20px;cursor:pointer;color:#999;">✕</button>
+      </div>
+      <div id="city-content" style="font-size:13px;color:var(--text);line-height:1.6;"></div>
+    </div>
+  </div>
+  <div id="bot">
+    <div class="rw">
+      <button class="btn2 b1" id="btn-move" onclick="startMove()">🚶 移动</button>
+      <button class="btn2 b2" id="btn-build" onclick="buildIndustry()">🏭 建工业</button>
+      <button class="btn2 b3" id="btn-end" onclick="endTurn()">⏭️ 结束回合</button>
+    </div>
+  </div>
+</div>
+
+<div id="modal"><div id="mb"></div></div>
+
+<script src="https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.min.js"></script>
+<script>
+// ==================== 城市数据 ====================
+// 工业禀赋类型: tech科技, finance金融, manufacturing制造, tourism旅游, logistics物流
+const INDUSTRY_TYPES = {
+  tech: {name:'科技', color:0x3498DB, icon:'💻', bonus:250},
+  finance: {name:'金融', color:0xF1C40F, icon:'💰', bonus:300},
+  manufacturing: {name:'制造', color:0xE67E22, icon:'🏭', bonus:150},
+  tourism: {name:'旅游', color:0x27AE60, icon:'🏖️', bonus:200},
+  logistics: {name:'物流', color:0x9B59B6, icon:'🚚', bonus:180}
+};
+
+const CITIES = [
+  {id:0,n:'深圳',x:160,z:220,adj:[1,3,14,17],c:0x3498DB,best:'tech',gdp:3.5,pop:1756,desc:'中国科技创新中心，华为腾讯大疆总部'},
+  {id:14,n:'龙华',x:140,z:260,adj:[0,10,16],c:0x3498DB,best:'manufacturing',gdp:0.3,pop:300,desc:'深圳北部门户，制造业基地'},
+  {id:16,n:'龙岗',x:200,z:280,adj:[14,15],c:0x3498DB,best:'manufacturing',gdp:0.4,pop:380,desc:'深圳东部中心，跨境电商'},
+  {id:17,n:'南山',x:120,z:180,adj:[0,15,18],c:0x3498DB,best:'tech',gdp:0.8,pop:180,desc:'科技园核心区，独角兽聚集地'},
+  {id:18,n:'福田',x:150,z:200,adj:[17,19,0],c:0x3498DB,best:'finance',gdp:0.6,pop:150,desc:'深圳CBD，金融中心'},
+  {id:19,n:'罗湖',x:180,z:240,adj:[18,0],c:0x3498DB,best:'logistics',gdp:0.3,pop:100,desc:'老城区，口岸商贸'},
+  {id:15,n:'宝安',x:100,z:240,adj:[0,13,16,17],c:0x3498DB,best:'logistics',gdp:0.5,pop:450,desc:'机场所在，航空物流枢纽'},
+  {id:1,n:'香港',x:250,z:120,adj:[0,6],c:0x9B59B6,best:'finance',gdp:3.6,pop:750,desc:'国际金融中心，亚洲华尔街'},
+  {id:2,n:'广州',x:200,z:60,adj:[3,4,5,12],c:0xE74C3C,best:'manufacturing',gdp:2.8,pop:1800,desc:'千年商都，汽车造船制造'},
+  {id:12,n:'南沙',x:220,z:100,adj:[2,10],c:0x3498DB,best:'logistics',gdp:0.2,pop:80,desc:'自贸区，深水港物流'},
+  {id:3,n:'东莞',x:200,z:140,adj:[0,2,4,10],c:0x27AE60,best:'manufacturing',gdp:1.1,pop:1000,desc:'世界工厂，电子制造'},
+  {id:10,n:'惠州',x:280,z:100,adj:[3,12,14],c:0x27AE60,best:'manufacturing',gdp:0.5,pop:480,desc:'电子信息产业基地'},
+  {id:4,n:'佛山',x:100,z:100,adj:[2,3,5,11],c:0xE67E22,best:'manufacturing',gdp:1.2,pop:900,desc:'家电陶瓷家具制造'},
+  {id:5,n:'中山',x:80,z:160,adj:[2,4,6,11],c:0xE67E22,best:'manufacturing',gdp:0.4,pop:440,desc:'灯饰五金制造'},
+  {id:6,n:'珠海',x:100,z:300,adj:[1,5,7,13],c:0xF1C40F,best:'tech',gdp:0.4,pop:240,desc:'经济特区，格力总部'},
+  {id:7,n:'澳门',x:50,z:340,adj:[6],c:0xF1C40F,best:'tourism',gdp:0.4,pop:68,desc:'世界旅游休闲中心'},
+  {id:13,n:'前海',x:130,z:320,adj:[6,15],c:0x3498DB,best:'finance',gdp:0.3,pop:50,desc:'深港合作区，金融创新'},
+  {id:11,n:'肇庆',x:40,z:140,adj:[4,8],c:0x27AE60,best:'manufacturing',gdp:0.2,pop:400,desc:'新能源汽车制造'},
+  {id:8,n:'江门',x:40,z:260,adj:[6,11],c:0xE67E22,best:'manufacturing',gdp:0.3,pop:480,desc:'侨乡，摩托车制造'}
+];
+
+let G={ps:[],cp:0,ph:'action',own:{},ap:1,highlighted:[],year:1990,turn:0};
+let scene,camera,renderer,cityMeshes=[],playerModels=[];
+
+// ==================== 年代事件系统 ====================
+const DECADE_EVENTS = {
+  1990: [
+    {title:'浦东开发',desc:'上海浦东新区开发启动',effect:{gdp:0.1},cities:['香港'],good:true},
+    {title:'深圳证券交易所成立',desc:'中国资本市场迈出重要一步',effect:{finance:50},cities:['深圳'],good:true},
+    {title:'香港GDP突破',desc:'香港经济蓬勃发展',effect:{money:200},cities:['香港'],good:true}
+  ],
+  2000: [
+    {title:'中国加入WTO',desc:'中国正式加入世界贸易组织',effect:{gdp:0.2},cities:['广州','深圳'],good:true},
+    {title:'互联网泡沫',desc:'科技股暴跌',effect:{tech:-30},cities:['深圳'],good:false},
+    {title:'CEPA签署',desc:'内地与香港更紧密经贸关系',effect:{trade:40},cities:['香港','深圳'],good:true}
+  ],
+  2010: [
+    {title:'粤港澳大湾区概念提出',desc:'区域一体化加速',effect:{gdp:0.15},cities:['广州','深圳','香港'],good:true},
+    {title:'高铁时代',desc:'广深港高铁开通',effect:{logistics:60},cities:['广州','深圳','香港'],good:true},
+    {title:'金融危机影响',desc:'全球金融危机波及',effect:{money:-100},cities:['香港'],good:false}
+  ],
+  2020: [
+    {title:'疫情冲击',desc:'新冠疫情影响经济',effect:{gdp:-0.1},cities:['香港','澳门'],good:false},
+    {title:'数字经济发展',desc:'数字经济蓬勃发展',effect:{tech:80},cities:['深圳','广州'],good:true},
+    {title:'港珠澳大桥',desc:'世界最长跨海大桥通车',effect:{logistics:50},cities:['香港','珠海','澳门'],good:true},
+    {title:'前海深港合作区',desc:'前海扩区，深港合作升级',effect:{finance:70},cities:['深圳','前海'],good:true}
+  ]
+};
+
+function checkDecadeEvent(){
+  const decade = Math.floor(G.year / 10) * 10;
+  const events = DECADE_EVENTS[decade];
+  if(!events || events.length === 0) return null;
+  
+  // 每个年代只触发一次事件
+  if(G.turn % 10 === 0){
+    const event = events[Math.floor(Math.random() * events.length)];
+    return event;
+  }
+  return null;
+}
+
+function applyEvent(event){
+  if(!event) return;
+  
+  let msg = `📜 ${event.title}\n\n${event.desc}\n\n`;
+  
+  if(event.effect.money){
+    G.ps[0].m += event.effect.money;
+    msg += `💰 金钱 ${event.effect.money > 0 ? '+' : ''}${event.effect.money}`;
+  }
+  if(event.effect.gdp){
+    msg += `📈 GDP影响: ${event.effect.gdp > 0 ? '+' : ''}${(event.effect.gdp * 100).toFixed(0)}%`;
+  }
+  
+  alert(msg);
+}
+
+function start(){
+  const DEFAULT_NAMES = ['湾区大亨', '地产之王', '投资大佬', '创业先锋', '财富猎人'];
+  const inputName = document.getElementById('nm').value.trim();
+  const n = inputName || DEFAULT_NAMES[Math.floor(Math.random() * DEFAULT_NAMES.length)];
+  G={ps:[{id:'p1',n:n,m:15000,pos:0,pr:[]},{id:'p2',n:'电脑',m:15000,pos:0,pr:[]}],cp:0,ph:'action',own:{},ap:1,highlighted:[],year:1990,turn:0};
+  document.getElementById('lobby').style.display='none';
+  document.getElementById('game').style.display='flex';
+  // 延迟初始化，等待flex布局完成
+  setTimeout(()=>{
+    init3D();
+    createPlayers();
+    uUI();
+  },100);
+}
+
+// ==================== 标志性建筑模型生成 ====================
+function createLandmark(cityId) {
+  const group = new THREE.Group();
+  const city = CITIES.find(c => c.id === cityId);
+  if (!city) return group;
+  
+  const baseColor = city.c;
+  
+  switch(city.n) {
+    case '深圳': { // 平安金融中心 - 细长锥体塔楼
+      const tower = new THREE.Mesh(
+        new THREE.ConeGeometry(6, 45, 4),
+        new THREE.MeshStandardMaterial({ color: 0x4A90D9, metalness: 0.6, roughness: 0.3 })
+      );
+      tower.position.y = 22;
+      tower.castShadow = true;
+      group.add(tower);
+      // 顶部尖塔
+      const spire = new THREE.Mesh(
+        new THREE.ConeGeometry(1, 8, 4),
+        new THREE.MeshStandardMaterial({ color: 0xC0C0C0, metalness: 0.8 })
+      );
+      spire.position.y = 48;
+      group.add(spire);
+      break;
+    }
+    case '香港': { // 中银大厦 - 三角棱柱塔楼
+      const shape = new THREE.Shape();
+      shape.moveTo(0, -6);
+      shape.lineTo(5, 6);
+      shape.lineTo(-5, 6);
+      shape.closePath();
+      const extrudeSettings = { depth: 40, bevelEnabled: false };
+      const geometry = new THREE.ExtrudeGeometry(shape, extrudeSettings);
+      const tower = new THREE.Mesh(
+        geometry,
+        new THREE.MeshStandardMaterial({ color: 0x1E3A5F, metalness: 0.5, roughness: 0.4 })
+      );
+      tower.rotation.x = -Math.PI / 2;
+      tower.position.y = 0;
+      tower.castShadow = true;
+      group.add(tower);
+      break;
+    }
+    case '广州': { // 广州塔 - 细腰圆柱塔
+      // 主塔身
+      const body = new THREE.Mesh(
+        new THREE.CylinderGeometry(4, 6, 40, 16),
+        new THREE.MeshStandardMaterial({ color: 0xE8E8E8, metalness: 0.3 })
+      );
+      body.position.y = 20;
+      body.castShadow = true;
+      group.add(body);
+      // 腰部收缩
+      const waist = new THREE.Mesh(
+        new THREE.TorusGeometry(3, 1, 8, 16),
+        new THREE.MeshStandardMaterial({ color: 0xFF6B35 })
+      );
+      waist.position.y = 25;
+      waist.rotation.x = Math.PI / 2;
+      group.add(waist);
+      // 顶部天线
+      const antenna = new THREE.Mesh(
+        new THREE.CylinderGeometry(0.5, 0.5, 10),
+        new THREE.MeshStandardMaterial({ color: 0x666666 })
+      );
+      antenna.position.y = 45;
+      group.add(antenna);
+      break;
+    }
+    case '澳门': { // 大三巴牌坊 - 矩形墙体+拱门
+      const wall = new THREE.Mesh(
+        new THREE.BoxGeometry(20, 35, 4),
+        new THREE.MeshStandardMaterial({ color: 0xD4A574 })
+      );
+      wall.position.y = 17;
+      wall.castShadow = true;
+      group.add(wall);
+      // 拱门装饰（用圆柱切一半模拟）
+      const arch = new THREE.Mesh(
+        new THREE.CylinderGeometry(4, 4, 4, 16, 1, false, 0, Math.PI),
+        new THREE.MeshStandardMaterial({ color: 0x8B4513 })
+      );
+      arch.position.set(0, 8, 2);
+      arch.rotation.x = Math.PI / 2;
+      group.add(arch);
+      break;
+    }
+    case '珠海': { // 珠海渔女 - 圆柱+球体组合
+      // 底座
+      const base = new THREE.Mesh(
+        new THREE.CylinderGeometry(6, 8, 8),
+        new THREE.MeshStandardMaterial({ color: 0x808080 })
+      );
+      base.position.y = 4;
+      group.add(base);
+      // 身体
+      const body = new THREE.Mesh(
+        new THREE.CylinderGeometry(3, 4, 20),
+        new THREE.MeshStandardMaterial({ color: 0x87CEEB })
+      );
+      body.position.y = 18;
+      body.castShadow = true;
+      group.add(body);
+      // 头部
+      const head = new THREE.Mesh(
+        new THREE.SphereGeometry(4),
+        new THREE.MeshStandardMaterial({ color: 0xFFE4C4 })
+      );
+      head.position.y = 32;
+      group.add(head);
+      // 举起的珍珠
+      const pearl = new THREE.Mesh(
+        new THREE.SphereGeometry(2),
+        new THREE.MeshStandardMaterial({ color: 0xFFD700, metalness: 0.8 })
+      );
+      pearl.position.set(5, 30, 0);
+      group.add(pearl);
+      break;
+    }
+    case '东莞': { // 篮球中心 - 圆顶体育馆
+      const dome = new THREE.Mesh(
+        new THREE.SphereGeometry(15, 16, 8, 0, Math.PI * 2, 0, Math.PI / 2),
+        new THREE.MeshStandardMaterial({ color: 0xE74C3C, metalness: 0.3 })
+      );
+      dome.position.y = 0;
+      dome.castShadow = true;
+      group.add(dome);
+      // 底座
+      const base = new THREE.Mesh(
+        new THREE.CylinderGeometry(16, 16, 5),
+        new THREE.MeshStandardMaterial({ color: 0x808080 })
+      );
+      base.position.y = 2;
+      group.add(base);
+      break;
+    }
+    case '佛山': { // 祖庙 - 传统屋顶造型
+      // 主体
+      const main = new THREE.Mesh(
+        new THREE.BoxGeometry(18, 15, 12),
+        new THREE.MeshStandardMaterial({ color: 0x8B4513 })
+      );
+      main.position.y = 7;
+      main.castShadow = true;
+      group.add(main);
+      // 屋顶（用锥体模拟传统屋顶）
+      const roof = new THREE.Mesh(
+        new THREE.ConeGeometry(14, 8, 4),
+        new THREE.MeshStandardMaterial({ color: 0xD4A574 })
+      );
+      roof.position.y = 19;
+      roof.rotation.y = Math.PI / 4;
+      group.add(roof);
+      break;
+    }
+    case '中山': { // 孙中山雕像 - 圆柱底座+人形
+      // 底座
+      const pedestal = new THREE.Mesh(
+        new THREE.BoxGeometry(10, 12, 10),
+        new THREE.MeshStandardMaterial({ color: 0x808080 })
+      );
+      pedestal.position.y = 6;
+      group.add(pedestal);
+      // 身体
+      const body = new THREE.Mesh(
+        new THREE.CylinderGeometry(3, 4, 18),
+        new THREE.MeshStandardMaterial({ color: 0xD4A574 })
+      );
+      body.position.y = 21;
+      body.castShadow = true;
+      group.add(body);
+      // 头部
+      const head = new THREE.Mesh(
+        new THREE.SphereGeometry(3),
+        new THREE.MeshStandardMaterial({ color: 0xD4A574 })
+      );
+      head.position.y = 32;
+      group.add(head);
+      break;
+    }
+    case '惠州': { // 西湖塔 - 六角塔楼
+      const tower = new THREE.Mesh(
+        new THREE.CylinderGeometry(5, 6, 35, 6),
+        new THREE.MeshStandardMaterial({ color: 0x8B4513 })
+      );
+      tower.position.y = 17;
+      tower.castShadow = true;
+      group.add(tower);
+      // 塔顶
+      const top = new THREE.Mesh(
+        new THREE.ConeGeometry(6, 8, 6),
+        new THREE.MeshStandardMaterial({ color: 0xD4A574 })
+      );
+      top.position.y = 38;
+      group.add(top);
+      break;
+    }
+    case '南沙': { // 邮轮母港 - 船型建筑
+      // 船身
+      const hull = new THREE.Mesh(
+        new THREE.ConeGeometry(8, 30, 4),
+        new THREE.MeshStandardMaterial({ color: 0xFFFFFF })
+      );
+      hull.position.y = 8;
+      hull.rotation.x = Math.PI / 2;
+      hull.rotation.z = Math.PI / 4;
+      hull.castShadow = true;
+      group.add(hull);
+      // 船舱
+      const cabin = new THREE.Mesh(
+        new THREE.BoxGeometry(12, 8, 6),
+        new THREE.MeshStandardMaterial({ color: 0x4169E1 })
+      );
+      cabin.position.y = 12;
+      group.add(cabin);
+      break;
+    }
+    case '前海': { // 前海石 - 立方体石头造型
+      const stone = new THREE.Mesh(
+        new THREE.BoxGeometry(15, 20, 12),
+        new THREE.MeshStandardMaterial({ color: 0x808080, roughness: 0.8 })
+      );
+      stone.position.y = 10;
+      stone.rotation.y = 0.3;
+      stone.castShadow = true;
+      group.add(stone);
+      // 文字牌
+      const plaque = new THREE.Mesh(
+        new THREE.BoxGeometry(8, 4, 1),
+        new THREE.MeshStandardMaterial({ color: 0xD4A574 })
+      );
+      plaque.position.set(0, 18, 7);
+      group.add(plaque);
+      break;
+    }
+    case '龙华': { // 深圳北站 - 弧形屋顶车站
+      // 站台
+      const platform = new THREE.Mesh(
+        new THREE.BoxGeometry(30, 5, 15),
+        new THREE.MeshStandardMaterial({ color: 0x808080 })
+      );
+      platform.position.y = 2;
+      group.add(platform);
+      // 弧形屋顶
+      const roof = new THREE.Mesh(
+        new THREE.CylinderGeometry(12, 12, 30, 16, 1, false, 0, Math.PI),
+        new THREE.MeshStandardMaterial({ color: 0x4A90D9, side: THREE.DoubleSide })
+      );
+      roof.position.y = 12;
+      roof.rotation.z = Math.PI / 2;
+      roof.castShadow = true;
+      group.add(roof);
+      break;
+    }
+    case '宝安': { // 机场航站楼 - 蜂窝造型
+      // 主建筑
+      const main = new THREE.Mesh(
+        new THREE.BoxGeometry(35, 10, 20),
+        new THREE.MeshStandardMaterial({ color: 0xFFFFFF })
+      );
+      main.position.y = 5;
+      main.castShadow = true;
+      group.add(main);
+      // 蜂窝屋顶
+      for (let i = -1; i <= 1; i++) {
+        const cell = new THREE.Mesh(
+          new THREE.CylinderGeometry(5, 5, 8, 6),
+          new THREE.MeshStandardMaterial({ color: 0x87CEEB, transparent: true, opacity: 0.7 })
+        );
+        cell.position.set(i * 10, 14, 0);
+        group.add(cell);
+      }
+      break;
+    }
+    case '南山': { // 腾讯大厦 - 圆柱塔楼
+      const tower = new THREE.Mesh(
+        new THREE.CylinderGeometry(6, 6, 40, 16),
+        new THREE.MeshStandardMaterial({ color: 0x00A4E4, metalness: 0.6 })
+      );
+      tower.position.y = 20;
+      tower.castShadow = true;
+      group.add(tower);
+      // 顶部标志
+      const top = new THREE.Mesh(
+        new THREE.BoxGeometry(10, 3, 2),
+        new THREE.MeshStandardMaterial({ color: 0x00A4E4 })
+      );
+      top.position.y = 42;
+      group.add(top);
+      break;
+    }
+    case '福田': { // 市民中心 - 大跨度屋顶
+      // 底座
+      const base = new THREE.Mesh(
+        new THREE.BoxGeometry(30, 8, 20),
+        new THREE.MeshStandardMaterial({ color: 0x808080 })
+      );
+      base.position.y = 4;
+      group.add(base);
+      // 大跨度屋顶（用半圆柱模拟）
+      const roof = new THREE.Mesh(
+        new THREE.CylinderGeometry(18, 18, 35, 16, 1, false, 0, Math.PI),
+        new THREE.MeshStandardMaterial({ color: 0x4A90D9, side: THREE.DoubleSide })
+      );
+      roof.position.y = 12;
+      roof.rotation.z = Math.PI / 2;
+      roof.castShadow = true;
+      group.add(roof);
+      break;
+    }
+    case '罗湖': { // 地王大厦 - 方形塔楼
+      const tower = new THREE.Mesh(
+        new THREE.BoxGeometry(10, 45, 10),
+        new THREE.MeshStandardMaterial({ color: 0x2E86AB, metalness: 0.5 })
+      );
+      tower.position.y = 22;
+      tower.castShadow = true;
+      group.add(tower);
+      // 顶部装饰
+      const top = new THREE.Mesh(
+        new THREE.ConeGeometry(6, 8, 4),
+        new THREE.MeshStandardMaterial({ color: 0xC0C0C0, metalness: 0.8 })
+      );
+      top.position.y = 48;
+      top.rotation.y = Math.PI / 4;
+      group.add(top);
+      break;
+    }
+    case '龙岗': { // 大运中心 - 椭圆体育馆
+      const dome = new THREE.Mesh(
+        new THREE.SphereGeometry(15, 16, 8, 0, Math.PI * 2, 0, Math.PI / 2),
+        new THREE.MeshStandardMaterial({ color: 0xE74C3C, metalness: 0.3 })
+      );
+      dome.scale.set(1.2, 1, 1);
+      dome.position.y = 0;
+      dome.castShadow = true;
+      group.add(dome);
+      // 底座
+      const base = new THREE.Mesh(
+        new THREE.CylinderGeometry(18, 18, 5, 16),
+        new THREE.MeshStandardMaterial({ color: 0x808080 })
+      );
+      base.position.y = 2;
+      group.add(base);
+      break;
+    }
+    case '肇庆': { // 七星岩 - 岩石造型
+      for (let i = 0; i < 5; i++) {
+        const rock = new THREE.Mesh(
+          new THREE.DodecahedronGeometry(5 + Math.random() * 3),
+          new THREE.MeshStandardMaterial({ color: 0x808080, roughness: 0.9 })
+        );
+        rock.position.set(
+          (i - 2) * 5 + Math.random() * 3,
+          8 + Math.random() * 5,
+          Math.random() * 6 - 3
+        );
+        rock.rotation.set(Math.random(), Math.random(), Math.random());
+        rock.castShadow = true;
+        group.add(rock);
+      }
+      break;
+    }
+    case '江门': { // 开平碉楼 - 方形碉楼
+      const tower = new THREE.Mesh(
+        new THREE.BoxGeometry(12, 35, 12),
+        new THREE.MeshStandardMaterial({ color: 0xD4A574 })
+      );
+      tower.position.y = 17;
+      tower.castShadow = true;
+      group.add(tower);
+      // 顶部瞭望台
+      const top = new THREE.Mesh(
+        new THREE.BoxGeometry(14, 5, 14),
+        new THREE.MeshStandardMaterial({ color: 0x8B4513 })
+      );
+      top.position.y = 37;
+      group.add(top);
+      // 窗户装饰
+      for (let i = 0; i < 3; i++) {
+        const win = new THREE.Mesh(
+          new THREE.BoxGeometry(2, 3, 1),
+          new THREE.MeshStandardMaterial({ color: 0x333333 })
+        );
+        win.position.set(0, 10 + i * 8, 6.5);
+        group.add(win);
+      }
+      break;
+    }
+    default: { // 默认建筑
+      const building = new THREE.Mesh(
+        new THREE.BoxGeometry(12, 25, 12),
+        new THREE.MeshStandardMaterial({ color: baseColor })
+      );
+      building.position.y = 12;
+      building.castShadow = true;
+      group.add(building);
+    }
+  }
+  
+  return group;
+}
+
+function init3D(){
+  const container=document.getElementById('scene');
+  console.log('[init3D] container:',container.clientWidth,'x',container.clientHeight);
+  scene=new THREE.Scene();
+  scene.background=new THREE.Color(0x87CEEB);
+  
+  camera=new THREE.PerspectiveCamera(60,container.clientWidth/container.clientHeight,0.1,2000);
+  camera.position.set(0,280,200);
+  camera.lookAt(0,0,0);
+  
+  renderer=new THREE.WebGLRenderer({antialias:true});
+  renderer.setSize(container.clientWidth,container.clientHeight);
+  renderer.setPixelRatio(Math.min(window.devicePixelRatio,2));
+  console.log('[init3D] renderer created');
+  container.appendChild(renderer.domElement);
+  
+  scene.add(new THREE.AmbientLight(0xffffff,0.7));
+  const dl=new THREE.DirectionalLight(0xffffff,0.8);
+  dl.position.set(100,200,100);
+  dl.castShadow=true;
+  scene.add(dl);
+  
+  // 地面 - 绿色
+  const ground=new THREE.Mesh(new THREE.PlaneGeometry(600,600),new THREE.MeshStandardMaterial({color:0x90EE90}));
+  ground.rotation.x=-Math.PI/2;
+  ground.position.y=-5;
+  scene.add(ground);
+  
+  // 城市节点 - 使用标志性建筑模型
+  CITIES.forEach((c,i)=>{
+    const landmark = createLandmark(c.id);
+    landmark.position.set(c.x-150, 0, c.z-200);
+    landmark.userData = { cityId: c.id };
+    scene.add(landmark);
+    
+    // 透明点击区域用于高亮
+    const hitArea = new THREE.Mesh(
+      new THREE.SphereGeometry(20, 8, 8),
+      new THREE.MeshBasicMaterial({ visible: false })
+    );
+    hitArea.position.y = 15;
+    hitArea.userData.cityId = c.id;
+    landmark.add(hitArea);
+    
+    cityMeshes[c.id] = landmark;
+    
+    const div=document.createElement('div');
+    div.textContent=c.n;
+    div.style.cssText='position:absolute;color:#333;font-size:10px;font-weight:600;background:rgba(255,255,255,0.85);padding:1px 4px;border-radius:3px;pointer-events:none;transform:translate(-50%,-100%);margin-top:-15px;';
+    document.getElementById('mid').appendChild(div);
+    c.label=div;
+  });
+  
+  // 道路 - 改用简单线条
+  CITIES.forEach(c=>{
+    c.adj.forEach(aid=>{
+      if(c.id<aid){
+        const a=CITIES.find(x=>x.id===aid);
+        if(!a) return;
+        // 使用 TubeGeometry 创建道路
+        const path = new THREE.LineCurve3(
+          new THREE.Vector3(c.x-150,2,c.z-200),
+          new THREE.Vector3(a.x-150,2,a.z-200)
+        );
+        const roadGeo = new THREE.TubeGeometry(path, 1, 1.5, 8, false);
+        const roadMat = new THREE.MeshStandardMaterial({color: 0x8B4513});
+        const road = new THREE.Mesh(roadGeo, roadMat);
+        scene.add(road);
+      }
+    });
+  });
+  
+  console.log('[init3D] scene ready');
+  animate();
+  window.addEventListener('resize',()=>{
+    camera.aspect=container.clientWidth/container.clientHeight;
+    camera.updateProjectionMatrix();
+    renderer.setSize(container.clientWidth,container.clientHeight);
+  });
+}
+
+function createPlayers(){
+  // 玩家1 - 橙色狐狸（放在建筑旁边，不重叠）
+  const p1=new THREE.Group();
+  const b1=new THREE.Mesh(new THREE.SphereGeometry(10),new THREE.MeshStandardMaterial({color:0xFF8C42}));
+  b1.position.y=10;
+  p1.add(b1);
+  const h1=new THREE.Mesh(new THREE.SphereGeometry(7),new THREE.MeshStandardMaterial({color:0xFF8C42}));
+  h1.position.y=22;
+  p1.add(h1);
+  // 耳朵
+  const e1=new THREE.Mesh(new THREE.ConeGeometry(3,6),new THREE.MeshStandardMaterial({color:0xFF8C42}));
+  e1.position.set(-4,28,0);e1.rotation.z=0.3;p1.add(e1);
+  const e2=e1.clone();e2.position.set(4,28,0);e2.rotation.z=-0.3;p1.add(e2);
+  // 放在建筑前方偏移位置
+  p1.position.set(CITIES[0].x-150-15,0,CITIES[0].z-200-15);
+  p1.userData.baseY=0;
+  scene.add(p1);
+  playerModels[0]=p1;
+  
+  // 玩家2 - 蓝色机器人（放在另一侧）
+  const p2=new THREE.Group();
+  const bb=new THREE.Mesh(new THREE.BoxGeometry(14,18,10),new THREE.MeshStandardMaterial({color:0x2196F3}));
+  bb.position.y=12;
+  p2.add(bb);
+  const bh=new THREE.Mesh(new THREE.CylinderGeometry(6,6,10),new THREE.MeshStandardMaterial({color:0x2196F3}));
+  bh.position.y=26;
+  p2.add(bh);
+  const ant=new THREE.Mesh(new THREE.CylinderGeometry(1,1,8),new THREE.MeshStandardMaterial({color:0x666}));
+  ant.position.y=34;
+  p2.add(ant);
+  // 放在建筑前方另一侧偏移
+  p2.position.set(CITIES[0].x-150+15,0,CITIES[0].z-200-15);
+  p2.userData.baseY=0;
+  scene.add(p2);
+  playerModels[1]=p2;
+}
+
+function animate(){
+  requestAnimationFrame(animate);
+  
+  // 更新城市标签位置 - 加保护
+  CITIES.forEach(c=>{
+    if(c && c.label && c.x !== undefined && c.z !== undefined){
+      try{
+        const pos=new THREE.Vector3(c.x-150,25,c.z-200);
+        pos.project(camera);
+        const x=(pos.x*.5+.5)*renderer.domElement.clientWidth;
+        const y=(-pos.y*.5+.5)*renderer.domElement.clientHeight;
+        c.label.style.left=x+'px';
+        c.label.style.top=y+'px';
+      }catch(e){}
+    }
+  });
+  
+  // 玩家动画
+  const t=Date.now()*.002;
+  playerModels.forEach((m,i)=>{
+    if(m)m.position.y=Math.sin(t+i*Math.PI)*2;
+  });
+  
+  renderer.render(scene,camera);
+}
+
+function updatePlayerPos(pi){
+  const c=CITIES.find(x=>x.id===G.ps[pi].pos);
+  if(!c||!playerModels[pi])return;
+  // 玩家放在建筑前方偏移位置，不重叠
+  const offsetX = pi === 0 ? -15 : 15;
+  const offsetZ = -15;
+  playerModels[pi].position.set(c.x-150+offsetX,0,c.z-200+offsetZ);
+}
+
+function uUI(){
+  document.getElementById('st').innerHTML=G.ps.map((p,i)=>`<div class="pcard ${i===G.cp?'on':''}">${i===0?'🔴':'🔵'} ${p.n}<br><span class="m">$${p.m}</span> ⚡<span class="ap">${G.ap}</span></div>`).join('');
+  document.getElementById('il').innerHTML=G.ps.map((p,i)=>`<div class="pi"><span>${i===0?'🔴':'🔵'} ${p.n} ${i===G.cp?'◀':''}</span><br><span class="m">$${p.m}</span></div>`).join('');
+  document.getElementById('year').textContent=`📅 ${G.year}年`;
+}
+
+function startMove(){
+  if(G.cp!==0||G.ap<=0)return;
+  G.ph='move';
+  G.highlighted.forEach(id=>{if(cityMeshes[id]){cityMeshes[id].scale.set(1,1,1);}});
+  G.highlighted=[];
+  const curr=CITIES.find(x=>x.id===G.ps[0].pos);
+  if(curr && curr.adj){
+    curr.adj.forEach(id=>{if(cityMeshes[id]){cityMeshes[id].scale.set(1.3,1.3,1.3);G.highlighted.push(id);}});
+  }
+  document.getElementById('btn-move').textContent='⏸ 取消';
+  document.getElementById('btn-move').onclick=()=>{G.ph='action';G.highlighted.forEach(id=>{if(cityMeshes[id]){cityMeshes[id].scale.set(1,1,1);}});G.highlighted=[];document.getElementById('btn-move').textContent='🚶 移动';document.getElementById('btn-move').onclick=startMove;};
+}
+
+function selectCity(id){
+  if(G.ph!=='move'||G.ap<=0)return;
+  const curr=CITIES.find(x=>x.id===G.ps[G.cp].pos);
+  if(!curr||!curr.adj||!curr.adj.includes(id))return;
+  G.ps[G.cp].pos=id;
+  G.ap--;
+  G.ph='action';
+  updatePlayerPos(G.cp);
+  G.highlighted.forEach(i=>{if(cityMeshes[i]){cityMeshes[i].scale.set(1,1,1);}});
+  G.highlighted=[];
+  document.getElementById('btn-move').textContent='🚶 移动';
+  document.getElementById('btn-move').onclick=startMove;
+  uUI();
+}
+
+function buildIndustry(){
+  if(G.cp!==0||G.ap<=0)return;
+  const c=CITIES.find(x=>x.id===G.ps[0].pos);
+  if(!c)return;
+  if(G.own[c.id]){alert('已有工业');return;}
+  G.own[c.id]='p1';
+  G.ap--;
+  G.ps[0].m-=500;
+  const ind=new THREE.Mesh(new THREE.BoxGeometry(8,8,8),new THREE.MeshStandardMaterial({color:0x8B4513}));
+  ind.position.set(c.x-150,15,c.z-200);
+  scene.add(ind);
+  uUI();alert('建设完成！');
+}
+
+function endTurn(){
+  G.cp=1;uUI();
+  setTimeout(()=>{
+    const curr=CITIES.find(x=>x.id===G.ps[1].pos);
+    if(!curr||!curr.adj)return;
+    const adj=curr.adj[Math.floor(Math.random()*curr.adj.length)];
+    G.ps[1].pos=adj;
+    updatePlayerPos(1);
+    if(!G.own[adj]&&Math.random()>.5){
+      G.own[adj]='p2';
+      const adjCity=CITIES.find(x=>x.id===adj);
+      if(adjCity){
+        const ind=new THREE.Mesh(new THREE.BoxGeometry(8,8,8),new THREE.MeshStandardMaterial({color:0x4169E1}));
+        ind.position.set(adjCity.x-150,15,adjCity.z-200);
+        scene.add(ind);
+      }
+    }
+    G.cp=0;G.ap=1;G.ph='action';
+    G.turn++;
+    
+    // 每10回合推进5年
+    if(G.turn % 2 === 0){
+      G.year += 1;
+    }
+    
+    // 检查年代事件
+    const event = checkDecadeEvent();
+    if(event){
+      applyEvent(event);
+    }
+    
+    G.highlighted.forEach(id=>{if(cityMeshes[id]){cityMeshes[id].scale.set(1,1,1);}});G.highlighted=[];
+    document.getElementById('btn-move').textContent='🚶 移动';document.getElementById('btn-move').onclick=startMove;
+    uUI();
+  },1000);
+}
+
+// 点击检测
+document.getElementById('scene').addEventListener('click',(e)=>{
+  // 先检测点击的是否为城市（显示城市信息）
+  const rect=renderer.domElement.getBoundingClientRect();
+  const x=((e.clientX-rect.left)/rect.width)*2-1;
+  const y=-((e.clientY-rect.top)/rect.height)*2+1;
+  const raycaster=new THREE.Raycaster();
+  raycaster.setFromCamera({x,y},camera);
+  const hits=raycaster.intersectObjects(Object.values(cityMeshes), true);
+  
+  if(hits.length>0){
+    // 从子 Mesh 向上查找到 Group 的 cityId
+    let obj = hits[0].object;
+    while (obj && !obj.userData.cityId && obj.parent) obj = obj.parent;
+    const id = obj ? obj.userData.cityId : undefined;
+    const city=CITIES.find(c=>c.id===id);
+    if(city){
+      showCityPanel(city);
+    }
+    
+    // 如果在移动模式且点击的是相邻城市，则移动
+    if(G.ph==='move'&&G.ap>0){
+      const curr=CITIES.find(c=>c.id===G.ps[0].pos);
+      if(curr && curr.adj && curr.adj.includes(id)){
+        G.ps[0].pos=id;G.ap--;G.ph='action';
+        updatePlayerPos(0);
+        G.highlighted.forEach(i=>{if(cityMeshes[i]){cityMeshes[i].scale.set(1,1,1);}});
+        G.highlighted=[];
+        document.getElementById('btn-move').textContent='🚶 移动';document.getElementById('btn-move').onclick=startMove;
+        uUI();
+      }
+    }
+  }
+});
+
+function showCityPanel(city){
+  const panel=document.getElementById('city-panel');
+  const nameEl=document.getElementById('city-name');
+  const contentEl=document.getElementById('city-content');
+  
+  const type=INDUSTRY_TYPES[city.best];
+  nameEl.innerHTML=city.n;
+  contentEl.innerHTML=`
+    <div style="margin-bottom:10px;">
+      <span style="background:${'#'+type.color.toString(16).padStart(6,'0')};color:#fff;padding:4px 10px;border-radius:12px;font-size:12px;">${type.icon} ${type.name}</span>
+    </div>
+    <div style="margin-bottom:8px;"><strong>最佳禀赋：</strong>${type.name}（收益$${type.bonus}/回合）</div>
+    <div style="margin-bottom:8px;"><strong>GDP：</strong>${city.gdp}万亿</div>
+    <div style="margin-bottom:8px;"><strong>人口：</strong>${city.pop}万</div>
+    <div style="color:#666;font-size:12px;">${city.desc}</div>
+  `;
+  panel.style.display='block';
+}
+</script>
+</body>
+</html>

@@ -1,0 +1,316 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1.0,maximum-scale=1.0,user-scalable=no">
+<title>🎲 大湾区大富翁 V1.8</title>
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+:root{--bg:#f5f0e8;--bg2:#e8e0d5;--accent:#d4a574;--text:#4a3f35;--card:#fffdf8;--border:rgba(212,165,116,0.3)}
+html,body{height:100%;overflow:hidden;background:linear-gradient(135deg,var(--bg),var(--bg2));font-family:-apple-system,'PingFang SC',sans-serif}
+#game{width:100vw;height:100vh;display:none;flex-direction:column}
+#lobby{width:100vw;height:100vh;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:20px}
+#lobby h1{font-size:clamp(26px,7vw,40px);color:var(--text);margin-bottom:6px}
+#lobby p{color:#7a6f65;font-size:13px;margin-bottom:20px}
+.form{width:100%;max-width:280px;display:flex;flex-direction:column;gap:10px}
+.form input{padding:14px;background:var(--card);border:1.5px solid var(--border);border-radius:12px;color:var(--text);font-size:16px}
+.btn{padding:14px;background:linear-gradient(135deg,var(--accent),#e8b872);border:none;border-radius:14px;color:#fff;font-size:16px;font-weight:600;cursor:pointer}
+#top{background:var(--card);padding:10px 14px;border-bottom:1px solid var(--border);display:flex;justify-content:space-between;align-items:center;z-index:100}
+#top h1{color:var(--text);font-size:13px}
+.st{display:flex;gap:6px}
+.pcard{background:rgba(212,165,116,0.08);border:1.5px solid transparent;padding:5px 10px;border-radius:10px;font-size:10px}
+.pcard.on{border-color:var(--accent)}
+.m{color:var(--accent);font-weight:700}
+.ap{color:#27ae60;font-weight:700}
+#mid{flex:1;position:relative;background:#e8e0d5}
+#scene{width:100%;height:100%}
+#bot{background:var(--card);padding:12px;border-top:1px solid var(--border);z-index:100}
+.rw{display:flex;align-items:center;justify-content:center;gap:10px}
+.btn2{padding:12px 22px;border:none;border-radius:12px;font-size:14px;font-weight:600;cursor:pointer;min-height:48px}
+.b1{background:linear-gradient(135deg,var(--accent),#e8b872);color:#fff}
+.b2{background:#7cb87c;color:#fff}
+.b3{background:#f5f0e8;color:var(--text);border:1px solid var(--border)}
+#info{position:absolute;top:50px;right:10px;background:var(--card);border:1px solid var(--border);border-radius:14px;width:150px;display:none;z-index:100}
+#info.show{display:block}
+#info h3{color:var(--accent);font-size:11px;padding:8px 10px;border-bottom:1px solid var(--border)}
+.pi{padding:8px 10px;font-size:10px}
+#ver{position:absolute;top:50px;left:10px;background:var(--card);border:1px solid var(--border);border-radius:12px;padding:6px 12px;font-size:11px;z-index:100}
+#modal{position:fixed;inset:0;background:rgba(0,0,0,.4);display:none;align-items:center;justify-content:center;z-index:200}
+#modal.show{display:flex}
+#mb{background:var(--card);border-radius:18px;padding:24px;max-width:300px;width:90%;text-align:center}
+#mb h2{color:var(--text);font-size:17px;margin-bottom:8px}
+#mb p{color:#7a6f65;font-size:13px}
+</style>
+</head>
+<body>
+
+<div id="lobby">
+  <h1>🎲 大湾区大富翁</h1>
+  <p>V1.8 3D版</p>
+  <div class="form">
+    <input id="nm" placeholder="你的名字" value="">
+    <button class="btn" onclick="start()">🎮 开始游戏</button>
+  </div>
+</div>
+
+<div id="game">
+  <div id="top">
+    <h1>🎲 大湾区大富翁</h1>
+    <div class="st" id="st"></div>
+  </div>
+  <div id="mid">
+    <div id="scene"></div>
+    <div id="ver">V1.8</div>
+    <button style="position:absolute;top:50px;right:10px;z-index:100;background:var(--card);border:1px solid var(--border);border-radius:10px;padding:8px;cursor:pointer" onclick="document.getElementById('info').classList.toggle('show')">📊</button>
+    <div id="info"><h3>状态</h3><div id="il"></div></div>
+  </div>
+  <div id="bot">
+    <div class="rw">
+      <button class="btn2 b1" id="btn-move" onclick="startMove()">🚶 移动</button>
+      <button class="btn2 b2" id="btn-build" onclick="buildIndustry()">🏭 建工业</button>
+      <button class="btn2 b3" id="btn-end" onclick="endTurn()">⏭️ 结束回合</button>
+    </div>
+  </div>
+</div>
+
+<div id="modal"><div id="mb"></div></div>
+
+<script src="https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.min.js"></script>
+<script>
+// ==================== 城市数据 ====================
+const CITIES = [
+  {id:0,n:'深圳',x:160,z:220,adj:[1,3,14,17],c:0x3498DB},
+  {id:14,n:'龙华',x:140,z:260,adj:[0,10,16],c:0x3498DB},
+  {id:16,n:'龙岗',x:200,z:280,adj:[14,15],c:0x3498DB},
+  {id:17,n:'南山',x:120,z:180,adj:[0,15,18],c:0x3498DB},
+  {id:18,n:'福田',x:150,z:200,adj:[17,19,0],c:0x3498DB},
+  {id:19,n:'罗湖',x:180,z:240,adj:[18,0],c:0x3498DB},
+  {id:15,n:'宝安',x:100,z:240,adj:[0,13,16,17],c:0x3498DB},
+  {id:1,n:'香港',x:250,z:120,adj:[0,6],c:0x9B59B6},
+  {id:2,n:'广州',x:200,z:60,adj:[3,4,5,12],c:0xE74C3C},
+  {id:12,n:'南沙',x:220,z:100,adj:[2,10],c:0x3498DB},
+  {id:3,n:'东莞',x:200,z:140,adj:[0,2,4,10],c:0x27AE60},
+  {id:10,n:'惠州',x:280,z:100,adj:[3,12,14],c:0x27AE60},
+  {id:4,n:'佛山',x:100,z:100,adj:[2,3,5,11],c:0xE67E22},
+  {id:5,n:'中山',x:80,z:160,adj:[2,4,6,11],c:0xE67E22},
+  {id:6,n:'珠海',x:100,z:300,adj:[1,5,7,13],c:0xF1C40F},
+  {id:7,n:'澳门',x:50,z:340,adj:[6],c:0xF1C40F},
+  {id:13,n:'前海',x:130,z:320,adj:[6,15],c:0x3498DB},
+  {id:11,n:'肇庆',x:40,z:140,adj:[4,8],c:0x27AE60},
+  {id:8,n:'江门',x:40,z:260,adj:[6,11],c:0xE67E22}
+];
+
+let G={ps:[],cp:0,ph:'action',own:{},ap:1,highlighted:[]};
+let scene,camera,renderer,cityMeshes=[],playerModels=[];
+
+function start(){
+  const n=document.getElementById('nm').value.trim()||'玩家';
+  G={ps:[{id:'p1',n:n,m:15000,pos:0,pr:[]},{id:'p2',n:'电脑',m:15000,pos:0,pr:[]}],cp:0,ph:'action',own:{},ap:1,highlighted:[]};
+  document.getElementById('lobby').style.display='none';
+  document.getElementById('game').style.display='flex';
+  init3D();
+  createPlayers();
+  uUI();
+}
+
+function init3D(){
+  const container=document.getElementById('scene');
+  scene=new THREE.Scene();
+  scene.background=new THREE.Color(0xf5f0e8);
+  
+  camera=new THREE.PerspectiveCamera(50,container.clientWidth/container.clientHeight,0.1,2000);
+  camera.position.set(0,400,300);
+  camera.lookAt(0,0,0);
+  
+  renderer=new THREE.WebGLRenderer({antialias:true});
+  renderer.setSize(container.clientWidth,container.clientHeight);
+  renderer.setPixelRatio(Math.min(window.devicePixelRatio,2));
+  container.appendChild(renderer.domElement);
+  
+  // 灯光
+  scene.add(new THREE.AmbientLight(0xffffff,0.7));
+  const dl=new THREE.DirectionalLight(0xffffff,0.8);
+  dl.position.set(100,200,100);
+  scene.add(dl);
+  
+  // 地面
+  const ground=new THREE.Mesh(new THREE.PlaneGeometry(600,600),new THREE.MeshStandardMaterial({color:0xe8e0d5}));
+  ground.rotation.x=-Math.PI/2;
+  scene.add(ground);
+  
+  // 城市节点
+  CITIES.forEach((c,i)=>{
+    const geo=new THREE.SphereGeometry(12,16,16);
+    const mat=new THREE.MeshStandardMaterial({color:c.c});
+    const mesh=new THREE.Mesh(geo,mat);
+    mesh.position.set(c.x-150,10,c.z-200);
+    mesh.userData={cityId:c.id};
+    scene.add(mesh);
+    cityMeshes[c.id]=mesh;
+    
+    // 城市名称标签
+    const div=document.createElement('div');
+    div.textContent=c.n;
+    div.style.cssText=`position:absolute;color:#4a3f35;font-size:10px;font-weight:600;transform:translate(-50%,0);pointer-events:none;`;
+    document.getElementById('mid').appendChild(div);
+    c.label=div;
+  });
+  
+  // 道路
+  CITIES.forEach(c=>{
+    c.adj.forEach(aid=>{
+      if(c.id<aid){
+        const a=CITIES[aid];
+        const pts=[new THREE.Vector3(c.x-150,1,c.z-200),new THREE.Vector3(a.x-150,1,a.z-200)];
+        const line=new THREE.Line(new THREE.BufferGeometry().setFromPoints(pts),new THREE.LineBasicMaterial({color:0xd4a574}));
+        scene.add(line);
+      }
+    });
+  });
+  
+  animate();
+  window.addEventListener('resize',()=>{
+    camera.aspect=container.clientWidth/container.clientHeight;
+    camera.updateProjectionMatrix();
+    renderer.setSize(container.clientWidth,container.clientHeight);
+  });
+}
+
+function createPlayers(){
+  // 玩家1 - 橙色狐狸
+  const p1=new THREE.Group();
+  const b1=new THREE.Mesh(new THREE.SphereGeometry(10),new THREE.MeshStandardMaterial({color:0xFF8C42}));
+  b1.position.y=10;
+  p1.add(b1);
+  const h1=new THREE.Mesh(new THREE.SphereGeometry(7),new THREE.MeshStandardMaterial({color:0xFF8C42}));
+  h1.position.y=22;
+  p1.add(h1);
+  // 耳朵
+  const e1=new THREE.Mesh(new THREE.ConeGeometry(3,6),new THREE.MeshStandardMaterial({color:0xFF8C42}));
+  e1.position.set(-4,28,0);e1.rotation.z=0.3;p1.add(e1);
+  const e2=e1.clone();e2.position.set(4,28,0);e2.rotation.z=-0.3;p1.add(e2);
+  p1.position.set(CITIES[0].x-150,0,CITIES[0].z-200);
+  p1.userData.baseY=0;
+  scene.add(p1);
+  playerModels[0]=p1;
+  
+  // 玩家2 - 蓝色机器人
+  const p2=new THREE.Group();
+  const bb=new THREE.Mesh(new THREE.BoxGeometry(14,18,10),new THREE.MeshStandardMaterial({color:0x2196F3}));
+  bb.position.y=12;
+  p2.add(bb);
+  const bh=new THREE.Mesh(new THREE.CylinderGeometry(6,6,10),new THREE.MeshStandardMaterial({color:0x2196F3}));
+  bh.position.y=26;
+  p2.add(bh);
+  const ant=new THREE.Mesh(new THREE.CylinderGeometry(1,1,8),new THREE.MeshStandardMaterial({color:0x666}));
+  ant.position.y=34;
+  p2.add(ant);
+  p2.position.set(CITIES[0].x-145,0,CITIES[0].z-200);
+  p2.userData.baseY=0;
+  scene.add(p2);
+  playerModels[1]=p2;
+}
+
+function animate(){
+  requestAnimationFrame(animate);
+  
+  // 更新城市标签位置
+  CITIES.forEach(c=>{
+    if(c.label){
+      const pos=new THREE.Vector3(c.x-150,25,c.z-200);
+      pos.project(camera);
+      const x=(pos.x*.5+.5)*renderer.domElement.clientWidth;
+      const y=(-pos.y*.5+.5)*renderer.domElement.clientHeight;
+      c.label.style.left=x+'px';
+      c.label.style.top=y+'px';
+    }
+  });
+  
+  // 玩家动画
+  const t=Date.now()*.002;
+  playerModels.forEach((m,i)=>{
+    if(m)m.position.y=Math.sin(t+i*Math.PI)*2;
+  });
+  
+  renderer.render(scene,camera);
+}
+
+function updatePlayerPos(pi){
+  const c=CITIES[G.ps[pi].pos];
+  playerModels[pi].position.set(c.x-150-(pi*5),0,c.z-200);
+}
+
+function uUI(){
+  document.getElementById('st').innerHTML=G.ps.map((p,i)=>`<div class="pcard ${i===G.cp?'on':''}">${i===0?'🔴':'🔵'} ${p.n}<br><span class="m">$${p.m}</span> ⚡<span class="ap">${G.ap}</span></div>`).join('');
+  document.getElementById('il').innerHTML=G.ps.map((p,i)=>`<div class="pi"><span>${i===0?'🔴':'🔵'} ${p.n} ${i===G.cp?'◀':''}</span><br><span class="m">$${p.m}</span></div>`).join('');
+}
+
+function startMove(){
+  if(G.cp!==0||G.ap<=0)return;
+  G.ph='move';
+  G.highlighted.forEach(id=>{cityMeshes[id].material.emissive=new THREE.Color(0);cityMeshes[id].scale.set(1,1,1);});
+  G.highlighted=[];
+  CITIES[G.ps[0].pos].adj.forEach(id=>{cityMeshes[id].material.emissive=new THREE.Color(0x27ae60);cityMeshes[id].material.emissiveIntensity=0.5;cityMeshes[id].scale.set(1.3,1.3,1.3);G.highlighted.push(id);});
+  document.getElementById('btn-move').textContent='⏸ 取消';
+  document.getElementById('btn-move').onclick=()=>{G.ph='action';G.highlighted.forEach(id=>{cityMeshes[id].material.emissive=new THREE.Color(0);cityMeshes[id].scale.set(1,1,1);});G.highlighted=[];document.getElementById('btn-move').textContent='🚶 移动';document.getElementById('btn-move').onclick=startMove;};
+}
+
+function buildIndustry(){
+  if(G.cp!==0||G.ap<=0)return;
+  const c=CITIES[G.ps[0].pos];
+  if(G.own[c.id]){alert('已有工业');return;}
+  G.own[c.id]='p1';
+  G.ap--;
+  G.ps[0].m-=500;
+  // 添加工业标记
+  const ind=new THREE.Mesh(new THREE.BoxGeometry(8,8,8),new THREE.MeshStandardMaterial({color:0x8B4513}));
+  ind.position.set(c.x-150,15,c.z-200);
+  scene.add(ind);
+  uUI();alert('建设完成！');
+}
+
+function endTurn(){
+  G.cp=1;uUI();
+  setTimeout(()=>{
+    const curr=CITIES[G.ps[1].pos];
+    const adj=curr.adj[Math.floor(Math.random()*curr.adj.length)];
+    G.ps[1].pos=adj;
+    updatePlayerPos(1);
+    if(!G.own[adj]&&Math.random()>.5){
+      G.own[adj]='p2';
+      const ind=new THREE.Mesh(new THREE.BoxGeometry(8,8,8),new THREE.MeshStandardMaterial({color:0x4169E1}));
+      ind.position.set(CITIES[adj].x-150,15,CITIES[adj].z-200);
+      scene.add(ind);
+    }
+    G.cp=0;G.ap=1;G.ph='action';
+    G.highlighted.forEach(id=>{cityMeshes[id].material.emissive=new THREE.Color(0);cityMeshes[id].scale.set(1,1,1);});G.highlighted=[];
+    document.getElementById('btn-move').textContent='🚶 移动';document.getElementById('btn-move').onclick=startMove;
+    uUI();
+  },1000);
+}
+
+// 点击检测
+document.getElementById('scene').addEventListener('click',(e)=>{
+  if(G.ph!=='move'||G.ap<=0)return;
+  const rect=renderer.domElement.getBoundingClientRect();
+  const x=((e.clientX-rect.left)/rect.width)*2-1;
+  const y=-((e.clientY-rect.top)/rect.height)*2+1;
+  const raycaster=new THREE.Raycaster();
+  raycaster.setFromCamera({x,y},camera);
+  const hits=raycaster.intersectObjects(Object.values(cityMeshes));
+  if(hits.length>0){
+    const id=hits[0].object.userData.cityId;
+    const curr=CITIES[G.ps[0].pos];
+    if(curr.adj.includes(id)){
+      G.ps[0].pos=id;G.ap--;G.ph='action';
+      updatePlayerPos(0);
+      G.highlighted.forEach(i=>{cityMeshes[i].material.emissive=new THREE.Color(0);cityMeshes[i].scale.set(1,1,1);});
+      G.highlighted=[];
+      document.getElementById('btn-move').textContent='🚶 移动';document.getElementById('btn-move').onclick=startMove;
+      uUI();
+    }
+  }
+});
+</script>
+</body>
+</html>

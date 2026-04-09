@@ -1,0 +1,21 @@
+{
+  "name": "bay-area-monopoly",
+  "version": "2.0.0",
+  "description": "粤港澳大富翁 - 多人在线版",
+  "main": "server-multi.js",
+  "scripts": {
+    "start": "node server-multi.js",
+    "dev": "node server-multi.js",
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "keywords": ["game", "monopoly", "multiplayer", "socket.io"],
+  "author": "",
+  "license": "ISC",
+  "type": "commonjs",
+  "dependencies": {
+    "express": "^5.2.1",
+    "playwright": "^1.59.1",
+    "socket.io": "^4.8.3",
+    "ws": "^8.20.0"
+  }
+}

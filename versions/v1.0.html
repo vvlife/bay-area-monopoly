@@ -1,0 +1,303 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1.0,maximum-scale=1.0,user-scalable=no">
+<title>🎲 粤港澳大富翁 3D</title>
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+html,body{height:100%;overflow:hidden;background:#0a0a12;color:#fff;font-family:-apple-system,sans-serif}
+#game{width:100vw;height:100vh;display:none;flex-direction:column}
+#lobby{width:100vw;height:100vh;display:flex;flex-direction:column;align-items:center;justify-content:center;background:linear-gradient(135deg,#1a1a2e,#0f3460);padding:20px}
+#lobby h1{font-size:clamp(24px,7vw,36px);color:#ffd700;margin-bottom:8px;text-align:center}
+#lobby p{color:#888;font-size:13px;margin-bottom:20px}
+.form{width:100%;max-width:280px;display:flex;flex-direction:column;gap:10px}
+.form input{padding:14px;background:#1a1a2e;border:1px solid #333;border-radius:10px;color:#fff;font-size:16px}
+.btn{padding:14px;background:linear-gradient(135deg,#ffd700,#ff9800);border:none;border-radius:10px;color:#000;font-size:16px;font-weight:700;cursor:pointer}
+.btn:disabled{opacity:.5}
+
+#top{background:rgba(26,26,46,.95);padding:8px 12px;border-bottom:1px solid rgba(255,215,0,.3);z-index:100}
+#top h1{color:#ffd700;font-size:12px}
+#top .status{display:flex;gap:8px;justify-content:flex-end;flex:1}
+.pcard{background:rgba(0,0,0,.5);padding:4px 8px;border-radius:6px;font-size:10px;border:2px solid transparent}
+.pcard.on{border-color:#ffd700}
+.pcard .m{color:#ffd700;font-weight:700}
+
+#mid{flex:1;position:relative;overflow:hidden}
+#scene{width:100%;height:100%}
+
+#bot{background:rgba(26,26,46,.95);padding:10px 12px;border-top:1px solid rgba(255,215,0,.3);z-index:100}
+#bot .row{display:flex;align-items:center;justify-content:center;gap:8px}
+.dice{width:40px;height:40px;background:#fff;border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:20px}
+.dice.ani{animation:r .5s}
+@keyframes r{0%{transform:rotate(0)}50%{transform:rotate(180deg) scale(1.1)}100%{transform:rotate(360deg)}}
+.btn2{padding:10px 18px;border:none;border-radius:8px;font-size:13px;font-weight:700;cursor:pointer}
+.btn2:disabled{opacity:.4}
+.b1{background:linear-gradient(135deg,#ffd700,#ff9800);color:#000}
+.b2{background:#4CAF50;color:#fff}
+.b3{background:#555;color:#fff}
+
+#info{position:absolute;top:50px;right:8px;background:rgba(26,26,46,.95);border:1px solid rgba(255,215,0,.3);border-radius:8px;width:130px;display:none;z-index:100}
+#info.show{display:block}
+#info h3{color:#ffd700;font-size:10px;padding:6px 8px;border-bottom:1px solid rgba(255,255,255,.1)}
+.pi{padding:6px 8px;font-size:9px;border-bottom:1px solid rgba(255,255,255,.05)}
+.pi .n{font-weight:700}
+.pi .m{color:#ffd700}
+
+#modal{position:fixed;inset:0;background:rgba(0,0,0,.8);display:none;align-items:center;justify-content:center;z-index:200}
+#modal.show{display:flex}
+#mb{background:#1a1a2e;border:1px solid rgba(255,215,0,.5);border-radius:14px;padding:20px;max-width:280px;width:90%;text-align:center}
+#mb h2{color:#ffd700;font-size:16px;margin-bottom:8px}
+#mb p{color:#aaa;font-size:12px;margin-bottom:4px}
+
+#ibtn{position:absolute;top:50px;right:8px;z-index:50;background:rgba(26,26,46,.9);border:1px solid rgba(255,215,0,.5);border-radius:8px;width:36px;height:36px;font-size:18px;cursor:pointer}
+</style>
+</head>
+<body>
+
+<div id="lobby">
+  <h1>🎲 粤港澳大富翁 3D</h1>
+  <p>大湾区主题 · 双人对战</p>
+  <div class="form">
+    <input id="nm" placeholder="你的名字" value="">
+    <button class="btn" id="sbtn">🎮 开始游戏</button>
+  </div>
+</div>
+
+<div id="game">
+  <div id="top">
+    <h1>🎲 大富翁 3D</h1>
+    <div class="status" id="st"></div>
+  </div>
+  <div id="mid">
+    <canvas id="scene"></canvas>
+    <button id="ibtn">📊</button>
+    <div id="info">
+      <h3>📊 状态</h3>
+      <div id="il"></div>
+    </div>
+  </div>
+  <div id="bot">
+    <div class="row">
+      <div class="dice" id="d1">🎲</div>
+      <div class="dice" id="d2">🎲</div>
+      <button class="btn2 b1" id="br">🎲 掷骰子</button>
+      <button class="btn2 b2" id="bb" style="display:none">💰 购买</button>
+      <button class="btn2 b3" id="bs" style="display:none">跳过</button>
+    </div>
+  </div>
+</div>
+
+<div id="modal"><div id="mb"></div></div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+<script>
+const D=['⚀','⚁','⚂','⚃','⚄','⚅'];
+const C={hk:0xC41E3A,sz:0x00BFFF,gz:0xFF8C00,zm:0x9400D3,start:0xFFD700,jail:0x555,chance:0x6B3FA0,tax:0x8B0000};
+const P=[0xf44336,0x2196F3];
+
+const T=[
+  {id:0,type:'start',n:'起点'},{id:1,type:'p',n:'维多利亚港',p:600,r:30,g:'hk',c:'香港'},{id:2,type:'c',n:'机会'},{id:3,type:'p',n:'太平山顶',p:600,r:30,g:'hk',c:'香港'},{id:4,type:'tax',n:'所得税',tx:2000},{id:5,type:'s',n:'港珠澳大桥',p:2000,r:250},{id:6,type:'p',n:'中环IFC',p:1000,r:50,g:'hk',c:'香港'},{id:7,type:'c',n:'命运'},{id:8,type:'p',n:'铜锣湾',p:1000,r:50,g:'hk',c:'香港'},{id:9,type:'p',n:'兰桂坊',p:1200,r:60,g:'hk',c:'香港'},
+  {id:10,type:'jail',n:'监狱'},{id:11,type:'p',n:'深圳湾',p:1400,r:70,g:'sz',c:'深圳'},{id:12,type:'p',n:'平安金融',p:1400,r:70,g:'sz',c:'深圳'},{id:13,type:'p',n:'华强北',p:1600,r:80,g:'sz',c:'深圳'},{id:14,type:'s',n:'深圳地铁',p:2000,r:250},{id:15,type:'p',n:'世界之窗',p:1800,r:90,g:'sz',c:'深圳'},{id:16,type:'c',n:'机会'},{id:17,type:'p',n:'深圳北站',p:1800,r:90,g:'sz',c:'深圳'},{id:18,type:'p',n:'东门老街',p:2000,r:100,g:'sz',c:'深圳'},{id:19,type:'f',n:'免费停车'},
+  {id:20,type:'p',n:'广州塔',p:2200,r:110,g:'gz',c:'广州'},{id:21,type:'c',n:'命运'},{id:22,type:'p',n:'珠江新城',p:2200,r:110,g:'gz',c:'广州'},{id:23,type:'p',n:'白云山',p:2400,r:120,g:'gz',c:'广州'},{id:24,type:'s',n:'白云机场',p:2000,r:250},{id:25,type:'p',n:'琶洲会展',p:2600,r:130,g:'gz',c:'广州'},{id:26,type:'p',n:'北京路',p:2600,r:130,g:'gz',c:'广州'},{id:27,type:'p',n:'上下九',p:2800,r:140,g:'gz',c:'广州'},{id:28,type:'tax',n:'奢侈税',tx:3000},{id:29,type:'go',n:'入狱'},
+  {id:30,type:'p',n:'珠海渔女',p:3000,r:150,g:'zm',c:'珠海'},{id:31,type:'p',n:'横琴新区',p:3000,r:150,g:'zm',c:'珠海'},{id:32,type:'c',n:'机会'},{id:33,type:'p',n:'大三巴',p:3200,r:160,g:'zm',c:'澳门'},{id:34,type:'s',n:'澳门轻轨',p:2000,r:250},{id:35,type:'c',n:'命运'},{id:36,type:'p',n:'威尼斯人',p:3500,r:175,g:'zm',c:'澳门'},{id:37,type:'p',n:'港珠澳口岸',p:4000,r:200,g:'zm',c:'珠海'},{id:38,type:'tax',n:'超级税',tx:5000},{id:39,type:'p',n:'澳门塔',p:5000,r:250,g:'zm',c:'澳门'}
+];
+
+let G={ps:[],cp:0,ph:'roll',pr:{}};
+let scn,cam,ren,ts=[],tks=[];
+const BS=16,TSZ=1.5;
+
+document.getElementById('sbtn').onclick=start;
+document.getElementById('ibtn').onclick=()=>document.getElementById('info').classList.toggle('show');
+document.getElementById('br').onclick=roll;
+document.getElementById('bb').onclick=buy;
+document.getElementById('bs').onclick=skip;
+
+function start(){
+  const n=document.getElementById('nm').value.trim()||'玩家';
+  G={ps:[{id:'p1',n:n,m:15000,pos:0,pr:[]},{id:'p2',n:'电脑',m:15000,pos:0,pr:[]}],cp:0,ph:'roll',pr:{}};
+  document.getElementById('lobby').style.display='none';
+  document.getElementById('game').style.display='flex';
+  init3D();
+  uUI();
+}
+
+function init3D(){
+  const cv=document.getElementById('scene');
+  scn=new THREE.Scene();
+  scn.background=new THREE.Color(0x0a0a12);
+  cam=new THREE.PerspectiveCamera(45,cv.clientWidth/cv.clientHeight,0.1,1000);
+  cam.position.set(0,18,18);
+  cam.lookAt(0,0,0);
+  ren=new THREE.WebGLRenderer({canvas:cv,antialias:true});
+  ren.setSize(cv.clientWidth,cv.clientHeight);
+  ren.shadowMap.enabled=true;
+  scn.add(new THREE.AmbientLight(0xffffff,0.7));
+  const sl=new THREE.DirectionalLight(0xffffff,0.8);
+  sl.position.set(10,20,10);
+  sl.castShadow=true;
+  scn.add(sl);
+  const gr=new THREE.Mesh(new THREE.PlaneGeometry(30,30),new THREE.MeshStandardMaterial({color:0x1a3a1a}));
+  gr.rotation.x=-Math.PI/2;
+  gr.receiveShadow=true;
+  scn.add(gr);
+  
+  // 棋盘
+  T.forEach((t,i)=>{
+    const p=gP(i);
+    let cl=0x2a5a2a;
+    if(t.g==='hk')cl=C.hk;else if(t.g==='sz')cl=C.sz;else if(t.g==='gz')cl=C.gz;else if(t.g==='zm')cl=C.zm;
+    else if(t.type==='start')cl=C.start;else if(t.type==='jail')cl=C.jail;else if(t.type==='c')cl=C.chance;else if(t.type==='tax')cl=C.tax;
+    const m=new THREE.Mesh(new THREE.BoxGeometry(TSZ-0.1,0.3,TSZ-0.1),new THREE.MeshStandardMaterial({color:cl}));
+    m.position.set(p.x,0.15,p.z);
+    m.castShadow=true;
+    scn.add(m);
+    ts.push(m);
+  });
+  
+  // 中央
+  const ct=new THREE.Mesh(new THREE.BoxGeometry(8,0.4,8),new THREE.MeshStandardMaterial({color:0x1a5c2e}));
+  ct.position.set(0,0.2,0);
+  scn.add(ct);
+  
+  // 玩家
+  G.ps.forEach((pl,pi)=>{
+    const g=new THREE.Group();
+    const b=new THREE.Mesh(new THREE.CylinderGeometry(0.35,0.4,0.15,16),new THREE.MeshStandardMaterial({color:P[pi]}));
+    b.position.y=0.08;g.add(b);
+    const bd=new THREE.Mesh(new THREE.CylinderGeometry(0.25,0.35,0.6,16),new THREE.MeshStandardMaterial({color:P[pi],emissive:P[pi],emissiveIntensity:0.2}));
+    bd.position.y=0.45;g.add(bd);
+    const hd=new THREE.Mesh(new THREE.SphereGeometry(0.2,16,16),new THREE.MeshStandardMaterial({color:P[pi]}));
+    hd.position.y=0.85;g.add(hd);
+    g.castShadow=true;
+    scn.add(g);
+    mT(g,0,pi);
+    tks.push(g);
+  });
+  
+  // 控制
+  let dg=false,px=0,py=0,th=Math.PI/4,ph=Math.PI/4,rd=25;
+  const uC=()=>{cam.position.set(rd*Math.sin(ph)*Math.cos(th),rd*Math.cos(ph),rd*Math.sin(ph)*Math.sin(th));cam.lookAt(0,0,0);};
+  uC();
+  cv.onmousedown=e=>{dg=true;px=e.clientX;py=e.clientY;};
+  cv.onmousemove=e=>{if(!dg)return;th-=(e.clientX-px)*0.01;ph=Math.max(0.3,Math.min(1.3,ph+(e.clientY-py)*0.01));uC();px=e.clientX;py=e.clientY;};
+  cv.onmouseup=()=>dg=false;
+  cv.ontouchstart=e=>{dg=true;px=e.touches[0].clientX;py=e.touches[0].clientY;};
+  cv.ontouchmove=e=>{if(!dg)return;th-=(e.touches[0].clientX-px)*0.005;ph=Math.max(0.3,Math.min(1.3,ph+(e.touches[0].clientY-py)*0.005));uC();px=e.touches[0].clientX;py=e.touches[0].clientY;};
+  cv.ontouchend=()=>dg=false;
+  cv.onwheel=e=>{rd=Math.max(12,Math.min(35,rd+e.deltaY*0.03));uC();};
+  
+  ani();
+  window.onresize=()=>{cam.aspect=cv.clientWidth/cv.clientHeight;cam.updateProjectionMatrix();ren.setSize(cv.clientWidth,cv.clientHeight);};
+}
+
+function gP(i){
+  const of=BS/2-TSZ/2;
+  if(i<10)return{x:of-i*TSZ,z:of};
+  if(i<20)return{x:-of,z:of-(i-10)*TSZ};
+  if(i<30)return{x:-of+(i-20)*TSZ,z:-of};
+  return{x:of,z:-of+(i-30)*TSZ};
+}
+
+function mT(tk,i,pi){
+  const p=gP(i);
+  tk.position.set(p.x+(pi===0?-0.3:0.3),0.5,p.z);
+}
+
+function ani(){requestAnimationFrame(ani);ren.render(scn,cam);}
+
+function uUI(){
+  document.getElementById('st').innerHTML=G.ps.map((p,i)=>`<div class="pcard ${i===G.cp?'on':''}">${i===0?'🔴':'🔵'} ${p.n}<br><span class="m">$${p.m.toLocaleString()}</span></div>`).join('');
+  document.getElementById('il').innerHTML=G.ps.map((p,i)=>`<div class="pi ${i===G.cp?'on':''}"><div class="n">${i===0?'🔴':'🔵'} ${p.n} ${i===G.cp?'◀':''}</div><div class="m">$${p.m.toLocaleString()}</div></div>`).join('');
+  document.getElementById('br').disabled=G.ph!=='roll';
+  document.getElementById('bb').style.display=G.ph==='buy'?'inline':'none';
+  document.getElementById('bs').style.display=G.ph==='buy'?'inline':'none';
+}
+
+function roll(){
+  const d1=Math.floor(Math.random()*6)+1,d2=Math.floor(Math.random()*6)+1;
+  document.getElementById('d1').classList.add('ani');document.getElementById('d2').classList.add('ani');
+  document.getElementById('d1').textContent=D[d1-1];document.getElementById('d2').textContent=D[d2-1];
+  setTimeout(()=>{
+    document.getElementById('d1').classList.remove('ani');document.getElementById('d2').classList.remove('ani');
+    mv(0,d1+d2);
+  },600);
+}
+
+function mv(pi,st){
+  const pl=G.ps[pi];
+  const op=pl.pos;
+  pl.pos=(pl.pos+st)%40;
+  if(pl.pos<op){pl.m+=2000;toast('🔴 经过起点 +$2000');}
+  let c=op;
+  const iv=setInterval(()=>{
+    c=(c+1)%40;
+    mT(tks[pi],c,pi);
+    if(c===pl.pos){clearInterval(iv);hL(pi);}
+  },120);
+}
+
+function hL(pi){
+  const pl=G.ps[pi],t=T[pl.pos];
+  if((t.type==='p'||t.type==='s')&&!G.pr[pl.pos]&&pl.m>=t.p){G.ph='buy';md(`🏙️ ${t.c||''} ${t.n}`,`价格: $${t.p}`,`租金: $${t.r}`);uUI();return;}
+  else if((t.type==='p'||t.type==='s')&&G.pr[pl.pos]&&G.pr[pl.pos].o!==pl.id){
+    const ow=G.ps.find(p=>p.id===G.pr[pl.pos].o);
+    const rn=Math.floor(t.r*(1+(G.pr[pl.pos].h||0)*0.5));
+    pl.m-=rn;ow.m+=rn;
+    toast(`💸 支付租金 $${rn}`);
+  }
+  else if(t.type==='tax'){pl.m-=t.tx;toast(`💰 缴税 -$${t.tx}`);}
+  endT();
+}
+
+function buy(){
+  const pl=G.ps[G.cp],t=T[pl.pos];
+  pl.m-=t.p;G.pr[pl.pos]={o:pl.id,h:0};pl.pr.push(pl.pos);
+  ts[pl.pos].material.emissive=new THREE.Color(P[G.cp]);
+  ts[pl.pos].material.emissiveIntensity=0.4;
+  const h=new THREE.Mesh(new THREE.BoxGeometry(0.3,0.4,0.3),new THREE.MeshStandardMaterial({color:P[G.cp],emissive:P[G.cp],emissiveIntensity:0.3}));
+  const p=gP(pl.pos);h.position.set(p.x+0.3,0.5,p.z+0.3);scn.add(h);
+  cM();toast(`🏆 购买 ${t.n}`);endT();
+}
+
+function skip(){cM();endT();}
+
+function endT(){
+  G.ph='roll';
+  if(G.cp===0){
+    G.cp=1;uUI();
+    setTimeout(()=>{
+      const d1=Math.floor(Math.random()*6)+1,d2=Math.floor(Math.random()*6)+1;
+      document.getElementById('d1').textContent=D[d1-1];document.getElementById('d2').textContent=D[d2-1];
+      const cpu=G.ps[1];
+      cpu.pos=(cpu.pos+d1+d2)%40;
+      mT(tks[1],cpu.pos,1);
+      const t=T[cpu.pos];
+      if((t.type==='p'||t.type==='s')&&!G.pr[cpu.pos]&&cpu.m>=t.p){
+        cpu.m-=t.p;G.pr[cpu.pos]={o:cpu.id,h:0};cpu.pr.push(cpu.pos);
+        ts[cpu.pos].material.emissive=new THREE.Color(P[1]);
+        ts[cpu.pos].material.emissiveIntensity=0.4;
+        toast(`🔵 电脑购买 ${t.n}`);
+      }
+      G.cp=0;uUI();
+    },1500);
+  }else{G.cp=0;uUI();}
+}
+
+function md(t,p,r){
+  document.getElementById('mb').innerHTML=`<h2>${t}</h2><p>${p}</p><p>${r}</p><div style="margin-top:14px"><button class="btn2 b2" onclick="buy()">💰 购买</button><button class="btn2 b3" onclick="skip()">跳过</button></div>`;
+  document.getElementById('modal').classList.add('show');
+}
+function cM(){document.getElementById('modal').classList.remove('show');}
+
+function toast(m){
+  const e=document.querySelector('.tst')||document.createElement('div');
+  e.className='tst';
+  e.style.cssText='position:fixed;top:55px;left:50%;transform:translateX(-50%);background:#ffd700;color:#000;padding:6px 14px;border-radius:6px;font-size:11px;z-index:500';
+  e.textContent=m;
+  document.body.appendChild(e);
+  setTimeout(()=>e.remove(),2500);
+}
+</script>
+</body>
+</html>

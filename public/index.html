@@ -1,0 +1,3207 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1.0,maximum-scale=1.0,user-scalable=no">
+<title>🎲 大湾区大富翁 V2.0 - 多人在线版</title>
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+:root{--bg:#f5f0e8;--bg2:#e8e0d5;--accent:#d4a574;--text:#4a3f35;--card:#fffdf8;--border:rgba(212,165,116,0.3)}
+html,body{height:100%;overflow:hidden;background:linear-gradient(135deg,var(--bg),var(--bg2));font-family:-apple-system,'PingFang SC',sans-serif}
+
+/* ===== 大厅 ===== */
+#lobby{width:100vw;height:100vh;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:20px}
+#lobby h1{font-size:clamp(26px,7vw,40px);color:var(--text);margin-bottom:6px}
+#lobby p{color:#7a6f65;font-size:13px;margin-bottom:20px}
+.form{width:100%;max-width:280px;display:flex;flex-direction:column;gap:10px}
+.form input{padding:14px;background:var(--card);border:1.5px solid var(--border);border-radius:12px;color:var(--text);font-size:16px}
+.btn{padding:14px;background:linear-gradient(135deg,var(--accent),#e8b872);border:none;border-radius:14px;color:#fff;font-size:16px;font-weight:600;cursor:pointer}
+.mode-select{display:flex;gap:10px;margin-top:10px}
+.mode-btn{flex:1;padding:12px;border-radius:12px;font-size:14px;font-weight:600;cursor:pointer;border:2px solid var(--border);background:var(--card);color:var(--text)}
+.mode-btn.active{border-color:var(--accent);background:rgba(212,165,116,0.15)}
+.mode-btn .icon{font-size:24px;display:block;margin-bottom:4px}
+
+/* ===== 房间 ===== */
+#room{width:100vw;height:100vh;display:none;flex-direction:column;align-items:center;justify-content:center;padding:20px}
+#room h2{color:var(--text);font-size:20px;margin-bottom:16px}
+.room-id{font-size:32px;font-weight:700;color:var(--accent);margin-bottom:4px;letter-spacing:4px}
+.room-hint{color:#999;font-size:12px;margin-bottom:16px}
+.player-list{width:100%;max-width:320px;display:flex;flex-direction:column;gap:8px;margin-bottom:16px}
+.player-item{display:flex;align-items:center;justify-content:space-between;padding:12px 16px;background:var(--card);border-radius:12px;border:1.5px solid var(--border)}
+.player-item .name{font-weight:600;color:var(--text)}
+.player-item .status{font-size:12px;padding:4px 10px;border-radius:8px}
+.player-item .status.ready{background:#d4edda;color:#155724}
+.player-item .status.waiting{background:#fff3cd;color:#856404}
+.player-item .host-badge{color:var(--accent);font-size:10px;margin-left:6px}
+.room-actions{display:flex;gap:10px;width:100%;max-width:320px}
+
+/* ===== 游戏 ===== */
+#game {
+  width: 100vw;
+  height: 100vh;
+  display: none;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+#top {
+  background: var(--card);
+  padding: 10px 16px;
+  border-bottom: 1px solid var(--border);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  z-index: 100;
+  flex: 0 0 auto;
+}
+
+/* 顶部状态栏 - 玩家信息 */
+.player-info {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.player-info .avatar {
+  width: 40px;
+  height: 40px;
+  background: linear-gradient(135deg, var(--accent), #e8b872);
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 20px;
+  box-shadow: 0 2px 8px rgba(212, 165, 116, 0.4);
+}
+
+.player-info .info {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.player-info .name {
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--text);
+}
+
+.player-info .stats {
+  display: flex;
+  gap: 12px;
+  font-size: 12px;
+}
+
+.player-info .money {
+  color: var(--accent);
+  font-weight: 600;
+}
+
+.player-info .ap {
+  color: #27ae60;
+  font-weight: 600;
+}
+
+/* 游戏信息区域 */
+.game-info {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+
+.game-info .year {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--text);
+  background: linear-gradient(135deg, var(--accent), #e8b872);
+  padding: 6px 14px;
+  border-radius: 20px;
+  color: #fff;
+}
+
+.game-info .info-btn {
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 6px 10px;
+  cursor: pointer;
+  font-size: 14px;
+  transition: all 0.2s;
+}
+
+.game-info .info-btn:hover {
+  background: var(--bg);
+}
+
+#top h1{color:var(--text);font-size:12px}
+.st{display:flex;gap:4px}
+.pcard{background:rgba(212,165,116,0.08);border:1.5px solid transparent;padding:3px 8px;border-radius:8px;font-size:9px;line-height:1.3}
+.pcard.on{border-color:var(--accent)}
+.m{color:var(--accent);font-weight:700}
+.ap{color:#27ae60;font-weight:700}
+
+#mid {
+  flex: 1 1 auto;
+  position: relative;
+  background: #e8e0d5;
+  min-height: 0;
+  overflow: hidden;
+}
+
+#scene{width:100%;height:100%}
+
+#chat-box{position:absolute;bottom:180px;left:10px;right:10px;max-height:120px;overflow-y:auto;background:rgba(255,253,248,0.95);border:1px solid var(--border);border-radius:10px;padding:8px;font-size:11px;display:none;z-index:80}
+
+#bot{background:var(--card);padding:10px 8px 16px;border-top:1px solid var(--border);z-index:100;flex:0 0 auto;box-shadow:0 -2px 10px rgba(0,0,0,0.1)}
+
+/* 旧布局兼容 */
+#bot{background:var(--card);padding:10px 8px 16px;border-top:1px solid var(--border);z-index:100;flex:0 0 auto;box-shadow:0 -2px 10px rgba(0,0,0,0.1)}
+.rw{display:flex !important;align-items:center !important;justify-content:space-between !important;gap:10px !important;padding:10px 20px !important;width:100% !important;visibility:visible !important;position:relative !important;background:#fff !important;border:1px solid red !important}
+.btn2{padding:15px 25px !important;min-width:100px !important;flex:1 1 auto !important;border:2px solid #333 !important;box-shadow:0 4px 12px rgba(0,0,0,0.3) !important;border-radius:12px !important;font-size:16px !important;font-weight:700 !important;cursor:pointer;min-height:50px !important;display:block !important;visibility:visible !important}
+.b1{background:linear-gradient(135deg,var(--accent),#e8b872);color:#fff}
+.b2{background:#7cb87c;color:#fff}
+.b3{background:#f5f0e8;color:var(--text);border:1px solid var(--border)}
+#info{position:absolute;top:5px;right:50px;background:var(--card);border:1px solid var(--border);border-radius:10px;width:140px;display:none;z-index:100;max-height:280px;overflow-y:auto;font-size:10px}
+#info.show{display:block}
+#info h3{color:var(--accent);font-size:11px;padding:8px 10px;border-bottom:1px solid var(--border)}
+.pi{padding:8px 10px;font-size:10px}
+#ver{position:absolute;top:5px;left:10px;background:var(--card);border:1px solid var(--border);border-radius:8px;padding:4px 8px;font-size:10px;z-index:100}
+#year{position:absolute;top:5px;left:60px;background:linear-gradient(135deg,#d4a574,#e8b872);border-radius:8px;padding:4px 8px;font-size:10px;font-weight:600;color:#fff;z-index:100}
+#modal{position:fixed;inset:0;background:rgba(0,0,0,.4);display:none;align-items:center;justify-content:center;z-index:200}
+#modal.show{display:flex}
+#mb{background:var(--card);border-radius:18px;padding:24px;max-width:300px;width:90%;text-align:center}
+#mb h2{color:var(--text);font-size:17px;margin-bottom:8px}
+#mb p{color:#7a6f65;font-size:13px}
+
+/* 聊天 */
+#chat-box{position:absolute;bottom:180px;left:10px;right:10px;max-height:120px;overflow-y:auto;background:rgba(255,253,248,0.95);border:1px solid var(--border);border-radius:10px;padding:8px;font-size:11px;display:none;z-index:80}
+#chat-box.show{display:block}
+.chat-msg{margin-bottom:6px;line-height:1.4;padding:4px 6px;background:rgba(212,165,116,0.1);border-radius:6px}
+.chat-msg .sender{color:var(--accent);font-weight:600}
+.chat-input-wrap{position:absolute;bottom:160px;left:10px;right:10px;display:none;z-index:85}
+.chat-input-wrap.show{display:flex;gap:8px}
+.chat-input-wrap input{padding:6px 10px;border:1.5px solid var(--border);border-radius:8px;background:var(--card);font-size:12px;flex:1}
+.chat-input-wrap button{padding:6px 12px;border:none;border-radius:8px;background:var(--accent);color:#fff;font-size:12px;cursor:pointer}
+#chat-toggle{position:absolute;bottom:190px;left:10px;z-index:80;background:var(--card);border:1px solid var(--border);border-radius:8px;padding:4px 8px;cursor:pointer;font-size:12px}
+
+/* 回合提示 */
+#turn-notice{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);background:rgba(0,0,0,0.7);color:#fff;padding:16px 32px;border-radius:16px;font-size:18px;font-weight:700;z-index:150;display:none;pointer-events:none}
+#turn-notice.show{display:block;animation:fadeInOut 2s ease-in-out}
+@keyframes fadeInOut{0%{opacity:0;transform:translate(-50%,-50%) scale(0.8)}15%{opacity:1;transform:translate(-50%,-50%) scale(1)}85%{opacity:1;transform:translate(-50%,-50%) scale(1)}100%{opacity:0;transform:translate(-50%,-50%) scale(0.8)}}
+
+/* 时间线 - 底部按钮上方 */
+#timeline{position:relative;width:100%;height:50px;background:linear-gradient(135deg,#2c3e50,#34495e);padding:8px 10px;display:flex;align-items:center;justify-content:center;gap:8px;z-index:85;box-shadow:0 -2px 8px rgba(0,0,0,0.2);flex:0 0 auto}
+.tl-year{flex:1;display:flex;flex-direction:column;align-items:center;padding:4px 6px;cursor:pointer;border-radius:6px;transition:all 0.2s;color:#fff}
+.tl-year:hover{background:rgba(255,255,255,0.2)}
+.tl-year .y{font-size:11px;font-weight:700}
+.tl-year .count{font-size:9px;color:rgba(255,255,255,0.8)}
+.tl-year .dot{width:8px;height:8px;border-radius:50%;background:rgba(255,255,255,0.5);margin-top:2px}
+.tl-year.active{background:rgba(255,255,255,0.25)}
+.tl-year.active .dot{background:#fff}
+.tl-year.triggered .dot{background:#27ae60}
+/* 事件弹出面板 */
+.tl-events{position:absolute;top:auto;bottom:60px;left:50%;transform:translateX(-50%);background:var(--card);border:1px solid var(--border);border-radius:12px;padding:12px;max-width:280px;width:90%;display:none;z-index:86;box-shadow:0 4px 15px rgba(0,0,0,0.15)}
+.tl-events.show{display:block}
+.tl-events h4{color:var(--accent);font-size:12px;margin-bottom:8px}
+.tl-event-item{font-size:11px;padding:4px 0;border-bottom:1px solid var(--border);line-height:1.4}
+.tl-event-item:last-child{border:none}
+
+/* 夜晚模式按钮 */
+#night-toggle{position:absolute;bottom:190px;right:10px;z-index:80;background:var(--card);border:1px solid var(--border);border-radius:8px;padding:4px 8px;cursor:pointer;font-size:12px}
+
+/* 缩放提示 */
+#zoom-hint{position:absolute;bottom:75px;left:50%;transform:translateX(-50%);background:rgba(0,0,0,0.6);color:#fff;padding:6px 12px;border-radius:8px;font-size:11px;z-index:100;display:none}
+
+/* 移动提示 */
+#move-hint{position:absolute;top:60px;left:50%;transform:translateX(-50%);background:linear-gradient(135deg,#27ae60,#2ecc71);color:#fff;padding:8px 16px;border-radius:12px;font-size:13px;font-weight:600;z-index:100;display:none;box-shadow:0 4px 15px rgba(39,174,96,0.4)}
+
+/* 断线提示 */
+#disconnect-notice{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);background:rgba(231,76,60,0.9);color:#fff;padding:16px 32px;border-radius:16px;font-size:14px;z-index:200;display:none;text-align:center}
+
+/* 城市槽位样式 */
+#city-panel .slot-list .slot-item.empty:hover {
+  background: rgba(212,165,116,0.15) !important;
+  transform: translateY(-1px);
+  box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+}
+#city-panel .slot-list .slot-item.built {
+  cursor: default !important;
+}
+
+/* ===== 新手引导样式 ===== */
+#tutorial-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.7);
+  z-index: 1000;
+  display: none;
+  align-items: center;
+  justify-content: center;
+}
+
+#tutorial-box {
+  background: var(--card);
+  border-radius: 20px;
+  padding: 24px;
+  max-width: 320px;
+  width: 90%;
+  text-align: center;
+  box-shadow: 0 10px 40px rgba(0, 0, 0, 0.3);
+  animation: tutorialPop 0.3s ease;
+}
+
+@keyframes tutorialPop {
+  from { transform: scale(0.9); opacity: 0; }
+  to { transform: scale(1); opacity: 1; }
+}
+
+.tutorial-icon {
+  font-size: 48px;
+  margin-bottom: 16px;
+}
+
+.tutorial-title {
+  font-size: 18px;
+  font-weight: 700;
+  color: var(--text);
+  margin-bottom: 12px;
+}
+
+.tutorial-desc {
+  font-size: 13px;
+  color: #666;
+  line-height: 1.6;
+  margin-bottom: 20px;
+  white-space: pre-line;
+}
+
+.tutorial-progress {
+  display: flex;
+  justify-content: center;
+  gap: 6px;
+  margin-bottom: 16px;
+}
+
+.tutorial-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--border);
+  transition: all 0.3s ease;
+}
+
+.tutorial-dot.active {
+  background: var(--accent);
+  width: 20px;
+  border-radius: 4px;
+}
+
+.tutorial-buttons {
+  display: flex;
+  gap: 10px;
+}
+
+.tutorial-btn {
+  flex: 1;
+  padding: 12px;
+  border: none;
+  border-radius: 10px;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.tutorial-btn.skip {
+  background: var(--border);
+  color: #666;
+}
+
+.tutorial-btn.skip:hover {
+  background: #ddd;
+}
+
+.tutorial-btn.next {
+  background: linear-gradient(135deg, var(--accent), #e8b872);
+  color: #fff;
+}
+
+.tutorial-btn.next:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(212,165,116,0.4);
+}
+
+/* 引导高亮动画 */
+@keyframes highlightPulse {
+  0%, 100% { box-shadow: 0 0 0 4px var(--accent), 0 0 20px var(--accent); }
+  50% { box-shadow: 0 0 0 6px var(--accent), 0 0 30px var(--accent); }
+}
+
+.tutorial-highlight {
+  animation: highlightPulse 1.5s ease-in-out infinite;
+  z-index: 1001 !important;
+  position: relative;
+}
+
+/* 响应式布局 - 平板和手机 */
+@media (max-width: 768px) {
+  #game {
+    grid-template-columns: 1fr;
+    grid-template-rows: auto 1fr auto auto auto;
+  }
+  
+  #mid {
+    grid-row: 2;
+    grid-column: 1;
+  }
+  
+  
+  
+  .current-city {
+    flex: 1;
+    margin-bottom: 0;
+    margin-right: 8px;
+  }
+  
+  .action-buttons {
+    flex-direction: row;
+    flex-wrap: wrap;
+    justify-content: center;
+  }
+  
+  
+  
+  #chat-area {
+    grid-row: 4;
+  }
+  
+  #bot {
+    grid-row: 5;
+  }
+  
+  .player-info .avatar {
+    width: 32px;
+    height: 32px;
+    font-size: 16px;
+  }
+  
+  .player-info .name {
+    font-size: 12px;
+  }
+  
+  .player-info .stats {
+    font-size: 11px;
+    gap: 8px;
+  }
+  
+  .game-info .year {
+    font-size: 12px;
+    padding: 4px 10px;
+  }
+}
+
+/* 底部结束回合按钮 */
+
+.btn-end-turn:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 16px rgba(39, 174, 96, 0.5);
+}
+
+.btn-end-turn:disabled {
+  background: #e0e0e0;
+  color: #999;
+  cursor: not-allowed;
+  box-shadow: none;
+  transform: none;
+}
+
+
+</style>
+</head>
+<body>
+
+<!-- 大厅 -->
+<div id="lobby">
+  <h1>🎲 大湾区大富翁</h1>
+  <p>V2.0 多人在线版</p>
+  <div class="form">
+    <input id="nm" placeholder="你的名字" value="">
+    <div class="mode-select">
+      <div class="mode-btn active" onclick="selectMode('single')">
+        <span class="icon">🎮</span>
+        单人游戏
+      </div>
+      <div class="mode-btn" onclick="selectMode('multi')">
+        <span class="icon">🌐</span>
+        多人游戏
+      </div>
+    </div>
+    <button class="btn" onclick="confirmStart()">开始游戏</button>
+  </div>
+</div>
+
+<!-- 多人房间 -->
+<div id="room">
+  <h2>🌐 多人房间</h2>
+  <div class="room-id" id="room-id-display"></div>
+  <div class="room-hint">分享房间号给朋友加入</div>
+  <div class="player-list" id="player-list"></div>
+  <div class="room-actions" id="room-actions"></div>
+</div>
+
+<!-- 游戏主界面 -->
+<div id="game">
+  <div id="top">
+    <div class="player-info">
+      <div class="avatar">🧑‍💼</div>
+      <div class="info">
+        <div class="name" id="player-name">玩家</div>
+        <div class="stats">
+          <span class="money">💰 <span id="money">15000</span></span>
+          <span class="ap">⚡ <span id="ap">1</span></span>
+        </div>
+      </div>
+    </div>
+    <div class="game-info">
+      <span class="year">📅 <span id="year">1990</span>年</span>
+      <button class="info-btn" onclick="document.getElementById('info').classList.toggle('show')">📊</button>
+      <button class="info-btn" onclick="startTutorial()" title="重新查看引导">❓</button>
+    </div>
+  </div>
+  <div id="mid">
+    <div id="scene"></div>
+    <div id="ver">V2.0</div>
+    <div id="info"><h3>状态</h3><div id="il"></div></div>
+    <div id="city-panel" style="position:absolute;left:10px;right:10px;top:50%;transform:translateY(-50%);max-height:60vh;background:var(--card);border:1px solid var(--border);border-radius:16px;padding:16px;z-index:90;display:none;box-shadow:0 4px 20px rgba(0,0,0,0.15);overflow-y:auto;">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;position:sticky;top:0;background:var(--card);padding-bottom:8px;border-bottom:1px solid var(--border);z-index:1;">
+        <h3 id="city-name" style="color:var(--text);font-size:16px;margin:0;"></h3>
+        <button onclick="document.getElementById('city-panel').style.display='none'" style="background:var(--accent);border:none;border-radius:50%;width:28px;height:28px;color:#fff;font-size:16px;cursor:pointer;display:flex;align-items:center;justify-content:center;flex-shrink:0;">✕</button>
+      </div>
+      <div id="city-content" style="font-size:12px;color:var(--text);line-height:1.6;"></div>
+    </div>
+    <button id="chat-toggle" onclick="toggleChat()">💬</button>
+    <div id="chat-box"></div>
+    <div class="chat-input-wrap" id="chat-input-wrap">
+      <input id="chat-input" placeholder="说点什么..." maxlength="100" onkeydown="if(event.key==='Enter')sendChat()">
+      <button onclick="sendChat()">发送</button>
+    </div>
+    <div id="turn-notice"></div>
+    <div id="move-hint">🚶 点击绿色高亮城市移动</div>
+    <div id="disconnect-notice">⚠️ 与服务器断开连接<br><small>尝试重新连接中...</small></div>
+    <button id="night-toggle" onclick="toggleNightMode()">🌙</button>
+    <div id="zoom-hint">👆 双指缩放 | 拖动旋转</div>
+  </div>
+  
+  <div id="timeline" style="display:none;"></div>
+  <div id="bot">
+    <div class="rw">
+      <button class="btn2 b1" id="btn-move" onclick="startMove()">🚶 移动</button>
+      <button class="btn2 b2" id="btn-build" onclick="buildIndustry()">🏭 建工业</button>
+      <button class="btn2 b3" id="btn-end" onclick="endTurn()">⏭️ 结束回合</button>
+    </div>
+  </div>
+  <div id="tl-events" class="tl-events"></div>
+</div>
+
+<div id="modal"><div id="mb"></div></div>
+
+<!-- 新手引导 -->
+<div id="tutorial-overlay">
+  <div id="tutorial-box">
+    <div class="tutorial-icon" id="tutorial-icon"></div>
+    <div class="tutorial-title" id="tutorial-title"></div>
+    <div class="tutorial-desc" id="tutorial-desc"></div>
+    <div class="tutorial-progress" id="tutorial-progress"></div>
+    <div class="tutorial-buttons">
+      <button class="tutorial-btn skip" onclick="skipTutorial()">跳过</button>
+      <button class="tutorial-btn next" id="tutorial-next" onclick="nextTutorialStep()">下一步</button>
+    </div>
+  </div>
+</div>
+
+<script src="https://unpkg.com/three@0.140.0/build/three.min.js"></script>
+<script src="https://unpkg.com/three@0.140.0/examples/js/controls/OrbitControls.js"></script>
+<script src="https://unpkg.com/three@0.140.0/examples/js/loaders/GLTFLoader.js"></script>
+<script src="/socket.io/socket.io.js"></script>
+<script>
+// ==================== 全局变量 ====================
+const PLAYER_COLORS = [0xFF8C42, 0x2196F3, 0xE74C3C, 0x27AE60];
+const PLAYER_EMOJIS = ['🔴', '🔵', '🟢', '🟡'];
+
+// ==================== 新手引导数据 ====================
+const TUTORIAL_STEPS = [
+  {
+    title: '欢迎来到粤港澳大富翁！',
+    desc: '在这个游戏中，你将扮演一位创业者，在粤港澳大湾区建立你的产业帝国。',
+    icon: '🎮',
+    highlight: null
+  },
+  {
+    title: '游戏目标',
+    desc: '通过移动到不同城市、建造产业、获取收益，成为最富有的企业家！',
+    icon: '🎯',
+    highlight: null
+  },
+  {
+    title: '界面说明',
+    desc: '上方显示年份和玩家状态\n中间是3D游戏场景\n下方是操作按钮区',
+    icon: '📱',
+    highlight: '#top'
+  },
+  {
+    title: '移动操作',
+    desc: '点击"移动"按钮，然后点击相邻城市即可移动。每个城市只能建造特定产业。',
+    icon: '🚶',
+    highlight: '#btn-move'
+  },
+  {
+    title: '建造产业',
+    desc: '到达城市后点击"建造"按钮，选择产业类型。不同城市对不同产业有加成或惩罚！',
+    icon: '🏗️',
+    highlight: '#btn-build'
+  },
+  {
+    title: '产业适配',
+    desc: '例如：深圳适合科技(+50%)，香港适合金融(+60%)，澳门适合旅游(+60%)，但香港制造会-40%！',
+    icon: '💡',
+    highlight: null
+  },
+  {
+    title: '结束回合',
+    desc: '行动点用完后会自动结束回合。你也可以点击"结束"提前结束。',
+    icon: '⏭️',
+    highlight: '#btn-end'
+  },
+  {
+    title: '历史事件',
+    desc: '每隔几个回合会触发历史事件，影响产业收益。如"数字经济发展"会让深圳科技+30%！',
+    icon: '📢',
+    highlight: null
+  },
+  {
+    title: '准备好了吗？',
+    desc: '点击"开始游戏"进入大湾区，祝你生意兴隆！',
+    icon: '🚀',
+    highlight: null
+  }
+];
+
+let currentTutorialStep = 0;
+let tutorialActive = false;
+
+let G = { ps: [], cp: 0, ph: 'action', own: {}, ap: 1, highlighted: [], year: 1990, turn: 0, triggeredEvents: {} };
+
+// 游戏操作记录
+let gameActions = [];
+let actionLogMax = 50; // 最多保留50条记录
+
+// 记录游戏操作
+function logAction(playerName, actionType, details) {
+  const time = new Date().toLocaleTimeString('zh-CN', { hour: '2-digit', minute: '2-digit', second: '2-digit' });
+  const action = {
+    time,
+    player: playerName,
+    type: actionType,
+    details: details
+  };
+  gameActions.push(action);
+  
+  // 限制记录数量
+  if (gameActions.length > actionLogMax) {
+    gameActions.shift();
+  }
+  
+  // 显示在聊天区
+  addActionToChat(action);
+}
+
+// 添加操作到聊天显示
+function addActionToChat(action) {
+  const chatBox = document.getElementById('chat-box');
+  const chatArea = document.getElementById('chat-area');
+  const icon = getActionIcon(action.type);
+  const isPlayer = action.player === '玩家' || (G.ps[0] && action.player === G.ps[0].n);
+  const color = isPlayer ? '#d4a574' : '#7cb87c';
+  
+  const html = `<div class="chat-msg">
+    <span style="color:#999;font-size:10px;">${action.time}</span>
+    <span style="color:${color};font-weight:600;margin:0 4px;">${action.player}</span>
+    <span>${icon} ${action.details}</span>
+  </div>`;
+  
+  // 添加到旧的聊天框（用于弹出聊天）
+  chatBox.insertAdjacentHTML('beforeend', html);
+  chatBox.scrollTop = chatBox.scrollHeight;
+  
+  // 添加到新的聊天区域（底部固定显示）
+  if (chatArea) {
+    chatArea.insertAdjacentHTML('beforeend', html);
+    chatArea.scrollTop = chatArea.scrollHeight;
+  }
+}
+
+// 获取操作图标
+function getActionIcon(type) {
+  const icons = {
+    'move': '🚶',
+    'build': '🏗️',
+    'endTurn': '⏭️',
+    'event': '📢',
+    'revenue': '💰',
+    'ai': '🤖'
+  };
+  return icons[type] || '📌';
+}
+
+// 清空操作记录
+function clearActionLog() {
+  gameActions = [];
+  const chatBox = document.getElementById('chat-box');
+  const chatArea = document.getElementById('chat-area');
+  if (chatBox) chatBox.innerHTML = '';
+  if (chatArea) chatArea.innerHTML = '';
+}
+
+// 全局产业适配修正（事件触发后累积）
+let industryModifiers = {};
+const ALL_CITY_NAMES = ['深圳', '香港', '广州', '东莞', '佛山', '中山', '珠海', '澳门', '惠州', '肇庆', '江门'];
+const ALL_INDUSTRY_KEYS = ['tech', 'finance', 'manufacturing', 'tourism', 'logistics'];
+ALL_CITY_NAMES.forEach(cn => {
+  industryModifiers[cn] = {};
+  ALL_INDUSTRY_KEYS.forEach(k => { industryModifiers[cn][k] = 0; });
+});
+
+// 当前选中城市ID
+let selectedCityId = null;
+
+let scene, camera, renderer, cityMeshes = [], playerModels = [], controls;
+let gltfLoader, towerModel = null;
+let gameMode = 'single'; // 'single' or 'multi'
+let socket = null;
+let mySocketId = null;
+let myPlayerIndex = -1;
+let roomId = null;
+let currentRoomId = null; // 全局变量，保存房间号供测试使用
+let isHost = false;
+let sceneInitialized = false;
+
+// ==================== 工业类型 ====================
+const INDUSTRY_TYPES = {
+  tech: {
+    name: '科技', color: 0x3498DB, icon: '💻', bonus: 250,
+    cityBonus: {
+      '深圳': 1.5, '香港': 1.3, '广州': 1.2, '珠海': 1.1,
+      '东莞': 1.1, '惠州': 1.1, '佛山': 1.1, '澳门': 0.9,
+      '中山': 0.8, '江门': 0.7, '肇庆': 0.6
+    }
+  },
+  finance: {
+    name: '金融', color: 0xF1C40F, icon: '💰', bonus: 300,
+    cityBonus: {
+      '香港': 1.6, '深圳': 1.3, '广州': 1.2, '澳门': 1.3,
+      '珠海': 1.0, '东莞': 0.9, '佛山': 0.9, '惠州': 0.8,
+      '中山': 0.7, '江门': 0.7, '肇庆': 0.6
+    }
+  },
+  manufacturing: {
+    name: '制造', color: 0xE67E22, icon: '🏭', bonus: 150,
+    cityBonus: {
+      '深圳': 1.3, '广州': 1.5, '东莞': 1.5, '佛山': 1.5,
+      '惠州': 1.4, '中山': 1.3, '江门': 1.3, '珠海': 1.1,
+      '香港': 0.6, '澳门': 0.5, '肇庆': 1.0
+    }
+  },
+  tourism: {
+    name: '旅游', color: 0x27AE60, icon: '🏖️', bonus: 200,
+    cityBonus: {
+      '澳门': 1.6, '香港': 1.3, '珠海': 1.4, '广州': 1.1,
+      '深圳': 0.8, '中山': 1.1, '东莞': 0.6, '佛山': 0.7,
+      '惠州': 1.0, '江门': 0.9, '肇庆': 0.7
+    }
+  },
+  logistics: {
+    name: '物流', color: 0x9B59B6, icon: '🚚', bonus: 180,
+    cityBonus: {
+      '广州': 1.4, '深圳': 1.3, '东莞': 1.3, '珠海': 1.2,
+      '佛山': 1.2, '惠州': 1.1, '江门': 1.1, '中山': 1.0,
+      '香港': 0.9, '澳门': 0.8, '肇庆': 0.8
+    }
+  }
+};
+
+// ==================== 坐标转换函数 ====================
+// 以深圳为中心(0,0)，1度≈111km，scale=2缩放
+function latLngToXY(lat, lng) {
+  const centerLat = 22.5431;
+  const centerLng = 114.0579;
+  const scale = 2;
+  const x = Math.round((lng - centerLng) * 111 * scale);
+  const z = Math.round((centerLat - lat) * 111 * scale); // z轴向北
+  return { x, z };
+}
+
+// 真实地理坐标 → 3D坐标映射表（预计算，避免每次运行）
+const GEO_MAP = {
+  深圳:   { lat: 22.5431, lng: 114.0579 },
+  香港:   { lat: 22.3193, lng: 114.1694 },
+  广州:   { lat: 23.1291, lng: 113.2644 },
+  东莞:   { lat: 22.9460, lng: 113.7442 },
+  佛山:   { lat: 23.0218, lng: 113.1219 },
+  中山:   { lat: 22.5176, lng: 113.3927 },
+  珠海:   { lat: 22.2710, lng: 113.5670 },
+  澳门:   { lat: 22.1987, lng: 113.5439 },
+  惠州:   { lat: 23.0823, lng: 114.4107 },
+  肇庆:   { lat: 23.0469, lng: 112.4650 },
+  江门:   { lat: 22.5793, lng: 113.0815 }
+};
+
+// 计算所有城市3D坐标
+function computeCity3DPos(name) {
+  const geo = GEO_MAP[name];
+  if (!geo) return { x: 0, z: 0 };
+  return latLngToXY(geo.lat, geo.lng);
+}
+
+// 地形类型定义
+const TERRAIN = {
+  coastal: { name: '沿海', color: '#4A90D9', groundColor: 0x3A8BC7 }, // 深蓝色海洋地形
+  plain:   { name: '平原', color: '#7CB342', groundColor: 0x6AAF32 }, // 深绿色平原
+  mountain:{ name: '山地', color: '#A0522D', groundColor: 0x8B7355 }   // 深褐色山地
+};
+
+// 城市槽位价格配置
+const SLOT_PRICES = [300, 500, 800, 1200, 2000];
+
+// 城市数据（11个地级市，真实坐标）
+const CITIES = (() => {
+  const data = [
+    { id: 0,  n: '深圳', lat: 22.5431, lng: 114.0579, adj: [1, 3, 8],  best: 'tech',         gdp: 3.5, pop: 1756, desc: '中国科技创新中心，华为腾讯大疆总部',      terrain: 'coastal', size: 1.5 },
+    { id: 1,  n: '香港', lat: 22.3193, lng: 114.1694, adj: [0, 6],   best: 'finance',      gdp: 3.6, pop: 750,  desc: '国际金融中心，亚洲华尔街',                     terrain: 'coastal', size: 1.4 },
+    { id: 2,  n: '广州', lat: 23.1291, lng: 113.2644, adj: [3, 4, 9], best: 'manufacturing',gdp: 2.8, pop: 1800, desc: '千年商都，汽车造船制造',                       terrain: 'plain',   size: 1.4 },
+    { id: 3,  n: '东莞', lat: 22.9460, lng: 113.7442, adj: [0, 2, 4], best: 'manufacturing', gdp: 1.1, pop: 1000, desc: '世界工厂，电子制造',                           terrain: 'plain',   size: 1.2 },
+    { id: 4,  n: '佛山', lat: 23.0218, lng: 113.1219, adj: [2, 3, 5], best: 'manufacturing',gdp: 1.2, pop: 900,  desc: '家电陶瓷家具制造',                               terrain: 'plain',   size: 1.1 },
+    { id: 5,  n: '中山', lat: 22.5176, lng: 113.3927, adj: [4, 6],   best: 'manufacturing', gdp: 0.4, pop: 440,  desc: '灯饰五金制造',                                   terrain: 'coastal', size: 0.9 },
+    { id: 6,  n: '珠海', lat: 22.2710, lng: 113.5670, adj: [1, 5, 7], best: 'tech',         gdp: 0.4, pop: 240,  desc: '经济特区，格力总部',                             terrain: 'coastal', size: 1.0 },
+    { id: 7,  n: '澳门', lat: 22.1987, lng: 113.5439, adj: [6],       best: 'tourism',      gdp: 0.4, pop: 68,   desc: '世界旅游休闲中心',                               terrain: 'coastal', size: 0.8 },
+    { id: 8,  n: '惠州', lat: 23.0823, lng: 114.4107, adj: [0],       best: 'manufacturing', gdp: 0.5, pop: 480,  desc: '电子信息产业基地',                               terrain: 'plain',   size: 0.9 },
+    { id: 9,  n: '肇庆', lat: 23.0469, lng: 112.4650, adj: [2, 10],   best: 'manufacturing', gdp: 0.2, pop: 400,  desc: '新能源汽车制造',                                   terrain: 'mountain',size: 0.7 },
+    { id: 10, n: '江门', lat: 22.5793, lng: 113.0815, adj: [6, 9],    best: 'manufacturing', gdp: 0.3, pop: 480,  desc: '侨乡，摩托车制造',                               terrain: 'plain',   size: 0.8 }
+  ];
+  // 为每个城市注入预计算的3D坐标和槽位数据
+  return data.map(c => {
+    const pos = computeCity3DPos(c.n);
+    // 根据城市规模决定槽位数量：大城市5个，中等4个，小城市3个
+    const slotCount = c.size >= 1.4 ? 5 : c.size >= 1.0 ? 4 : 3;
+    const slots = SLOT_PRICES.slice(0, slotCount).map((price, idx) => ({
+      id: idx,
+      price: price,
+      built: false,
+      type: null,
+      owner: null
+    }));
+    return { ...c, x: pos.x + 150, z: pos.z + 200, slots: slots };
+  });
+})();
+
+// ==================== 年代事件 ====================
+const DECADE_EVENTS = {
+  1990: [
+    { title: '深圳证券交易所成立', desc: '中国资本市场迈出重要一步，深圳成为金融中心', effect: { finance: 50 }, industryEffect: { '深圳': { finance: 0.2 } }, cities: ['深圳'], good: true, icon: '📈', flavor: '💰 深圳金融产业收益 +20%（永久生效）' },
+    { title: '香港GDP突破', desc: '香港经济蓬勃发展，成为亚洲金融中心', effect: { money: 200 }, industryEffect: { '香港': { finance: 0.1, logistics: 0.1 } }, cities: ['香港'], good: true, icon: '💎', flavor: '💵 所有玩家获得 +$200 红包奖励！' }
+  ],
+  2000: [
+    { title: '中国加入WTO', desc: '中国正式加入世界贸易组织，开放的大门越开越大', effect: { gdp: 0.2 }, industryEffect: { '广州': { manufacturing: 0.15 }, '深圳': { logistics: 0.15 } }, cities: ['广州', '深圳'], good: true, icon: '🌍', flavor: '🏭 广州、深圳制造业/物流收益 +15%' },
+    { title: '互联网泡沫', desc: '科技股暴跌，互联网行业遭受重创', effect: { tech: -30 }, industryEffect: { '深圳': { tech: -0.3 } }, cities: ['深圳'], good: false, icon: '📉', flavor: '💻 深圳科技产业收益 -30%（永久生效）' },
+    { title: 'CEPA签署', desc: '内地与香港建立更紧密经贸关系', effect: { trade: 40 }, industryEffect: { '香港': { finance: 0.15, logistics: 0.15 }, '深圳': { finance: 0.15, logistics: 0.15 } }, cities: ['香港', '深圳'], good: true, icon: '🤝', flavor: '💰 港深金融/物流收益 +15%（永久生效）' }
+  ],
+  2010: [
+    { title: '粤港澳大湾区概念提出', desc: '区域一体化加速，粤港澳大湾区成为国家战略', effect: { gdp: 0.15 }, industryEffect: { '广州': { tech: 0.2 }, '深圳': { tech: 0.2 }, '香港': { finance: 0.2 } }, cities: ['广州', '深圳', '香港'], good: true, icon: '🏙️', flavor: '🚀 广深港科技/金融收益 +20%（永久生效）' },
+    { title: '高铁时代', desc: '广深港高铁开通，1小时生活圈形成', effect: { logistics: 60 }, industryEffect: { '广州': { logistics: 0.2 }, '深圳': { logistics: 0.2 }, '香港': { logistics: 0.2 } }, cities: ['广州', '深圳', '香港'], good: true, icon: '🚄', flavor: '🚚 广深港物流收益 +20%（永久生效）' },
+    { title: '金融危机影响', desc: '全球金融危机波及香港，金融市场动荡', effect: { money: -100 }, industryEffect: { '香港': { finance: -0.2 } }, cities: ['香港'], good: false, icon: '⚠️', flavor: '💸 香港金融收益 -20%（永久生效）' }
+  ],
+  2020: [
+    { title: '疫情冲击', desc: '新冠疫情影响全球经济，旅游行业遭受重创', effect: { gdp: -0.1 }, industryEffect: { '香港': { tourism: -0.3 }, '澳门': { tourism: -0.3 } }, cities: ['香港', '澳门'], good: false, icon: '🦠', flavor: '😷 港澳旅游业收益 -30%（永久生效）' },
+    { title: '数字经济发展', desc: '数字经济蓬勃发展，深圳成为科技创新高地', effect: { tech: 80 }, industryEffect: { '深圳': { tech: 0.3 }, '广州': { tech: 0.3 } }, cities: ['深圳', '广州'], good: true, icon: '💻', flavor: '⚡ 深广科技收益 +30%（永久生效）' },
+    { title: '港珠澳大桥', desc: '世界最长跨海大桥通车，三地互联互通', effect: { logistics: 50 }, industryEffect: { '香港': { logistics: 0.2, tourism: 0.2 }, '珠海': { logistics: 0.2, tourism: 0.2 }, '澳门': { logistics: 0.2, tourism: 0.2 } }, cities: ['香港', '珠海', '澳门'], good: true, icon: '🌉', flavor: '🌊 港澳珠物流/旅游收益 +20%（永久生效）' },
+    { title: '深港合作区扩容', desc: '前海扩区，深港合作升级，金融创新加速', effect: { finance: 70 }, industryEffect: { '深圳': { finance: 0.25 }, '香港': { finance: 0.25 } }, cities: ['深圳', '香港'], good: true, icon: '🔗', flavor: '💎 港深金融收益 +25%（永久生效）' }
+  ]
+};
+
+// ==================== 大厅逻辑 ====================
+function selectMode(mode) {
+  gameMode = mode;
+  document.querySelectorAll('.mode-btn').forEach((btn, i) => {
+    btn.classList.toggle('active', (i === 0 && mode === 'single') || (i === 1 && mode === 'multi'));
+  });
+}
+
+function confirmStart() {
+  if (gameMode === 'single') {
+    startSingleGame();
+  } else {
+    showMultiOptions();
+  }
+}
+
+function showMultiOptions() {
+  const nm = document.getElementById('nm').value.trim() || ('玩家' + Math.floor(Math.random() * 1000));
+  const mb = document.getElementById('mb');
+  document.getElementById('modal').classList.add('show');
+  mb.innerHTML = `
+    <h2>🌐 多人游戏</h2>
+    <p>选择操作：</p>
+    <div style="display:flex;flex-direction:column;gap:10px;margin-top:16px;">
+      <button class="btn" onclick="createRoom()">创建房间</button>
+      <input id="join-input" placeholder="输入房间号" style="padding:14px;background:var(--bg);border:1.5px solid var(--border);border-radius:12px;color:var(--text);font-size:16px;text-transform:uppercase;letter-spacing:2px;text-align:center;">
+      <button class="btn" style="background:linear-gradient(135deg,#7cb87c,#4a9e4a)" onclick="joinRoom()">加入房间</button>
+      <button onclick="document.getElementById('modal').classList.remove('show')" style="background:none;border:none;color:#999;font-size:13px;cursor:pointer;padding:8px;">取消</button>
+    </div>
+  `;
+}
+
+// ==================== 多人连接 ====================
+function connectSocket() {
+  if (socket && socket.connected) return;
+  
+  socket = io({ transports: ['websocket', 'polling'], reconnection: true, reconnectionAttempts: 10, reconnectionDelay: 2000 });
+  
+  socket.on('connect', () => {
+    mySocketId = socket.id;
+    console.log('已连接服务器:', mySocketId);
+    document.getElementById('disconnect-notice').style.display = 'none';
+  });
+  
+  socket.on('disconnect', () => {
+    console.log('与服务器断开');
+    if (gameMode === 'multi') {
+      document.getElementById('disconnect-notice').style.display = 'block';
+    }
+  });
+  
+  socket.on('connect_error', (err) => {
+    console.log('连接错误:', err.message);
+  });
+  
+  socket.on('reconnect', () => {
+    console.log('重新连接成功');
+    document.getElementById('disconnect-notice').style.display = 'none';
+    // 重新加入房间
+    if (roomId) {
+      const nm = document.getElementById('nm').value.trim() || ('玩家' + Math.floor(Math.random() * 1000));
+      socket.emit('joinRoom', { roomId: roomId, name: nm });
+    }
+  });
+  
+  // 房间事件
+  socket.on('roomCreated', (data) => {
+    roomId = data.roomId;
+    currentRoomId = data.roomId; // 保存到全局变量
+    mySocketId = data.playerId;
+    isHost = true;
+    showRoomView();
+  });
+  
+  socket.on('roomJoined', (data) => {
+    roomId = data.roomId;
+    mySocketId = data.playerId;
+    isHost = data.isHost;
+    showRoomView();
+  });
+  
+  socket.on('roomUpdate', (data) => {
+    updateRoomPlayers(data.players, data.roomId);
+  });
+  
+  socket.on('gameStarted', (state) => {
+    G = state;
+    document.getElementById('room').style.display = 'none';
+    document.getElementById('game').style.display = 'flex';
+    
+    setTimeout(() => {
+      if (!sceneInitialized) {
+        init3D();
+        sceneInitialized = true;
+      }
+      createPlayers();
+      updateAllPlayerPositions();
+      uUI();
+      showTurnNotice(getCurrentPlayerName() + ' 的回合');
+      
+      // 检查新手引导
+      checkTutorial();
+    }, 100);
+  });
+  
+  socket.on('gameState', (state) => {
+    G = state;
+    uUI();
+  });
+  
+  socket.on('playerMoved', (data) => {
+    const pi = G.ps.findIndex(p => p.id === data.playerId);
+    if (pi >= 0) {
+      updatePlayerPos(pi);
+      uUI();
+    }
+  });
+  
+  socket.on('industryBuilt', (data) => {
+    const player = G.ps.find(p => p.id === data.playerId);
+    if (player) {
+      const city = CITIES.find(c => c.id === data.cityId);
+      if (city) {
+        addIndustryMesh(data.cityId, data.playerId);
+      }
+    }
+    uUI();
+  });
+  
+  socket.on('turnEnded', (data) => {
+    uUI();
+    showTurnNotice(getCurrentPlayerName() + ' 的回合');
+    
+    // 更新所有玩家位置
+    updateAllPlayerPositions();
+    
+    // AI回合（单人模式下的电脑玩家）
+    if (gameMode === 'single' && data.nextPlayerIndex === 1) {
+      setTimeout(() => aiTurn(), 1000);
+    }
+  });
+  
+  socket.on('decadeEvent', (event) => {
+    showEventModal(event);
+  });
+  
+  socket.on('playerDisconnected', (data) => {
+    showNotice(data.playerName + ' 离开了游戏');
+  });
+  
+  socket.on('citiesHighlighted', (data) => {
+    G.highlighted.forEach(id => { if (cityMeshes[id]) cityMeshes[id].scale.set(1, 1, 1); });
+    G.highlighted = data.cityIds || [];
+    G.highlighted.forEach(id => { if (cityMeshes[id]) cityMeshes[id].scale.set(1.3, 1.3, 1.3); });
+  });
+  
+  socket.on('chatMessage', (data) => {
+    addChatMessage(data.playerName, data.message);
+  });
+  
+  socket.on('error', (data) => {
+    alert(data.message);
+  });
+}
+
+function createRoom() {
+  const nm = document.getElementById('nm').value.trim() || ('玩家' + Math.floor(Math.random() * 1000));
+  document.getElementById('modal').classList.remove('show');
+  
+  connectSocket();
+  socket.on('connect', function onConnect() {
+    socket.off('connect', onConnect);
+    socket.emit('createRoom', { name: nm });
+  });
+}
+
+function joinRoom() {
+  const nm = document.getElementById('nm').value.trim() || ('玩家' + Math.floor(Math.random() * 1000));
+  const inputRoomId = document.getElementById('join-input').value.trim().toUpperCase();
+  
+  if (!inputRoomId) {
+    alert('请输入房间号');
+    return;
+  }
+  
+  document.getElementById('modal').classList.remove('show');
+  
+  connectSocket();
+  socket.on('connect', function onConnect() {
+    socket.off('connect', onConnect);
+    socket.emit('joinRoom', { roomId: inputRoomId, name: nm });
+  });
+}
+
+// ==================== 房间视图 ====================
+function showRoomView() {
+  document.getElementById('lobby').style.display = 'none';
+  document.getElementById('room').style.display = 'flex';
+  document.getElementById('room-id-display').textContent = roomId;
+}
+
+function updateRoomPlayers(players, rid) {
+  const list = document.getElementById('player-list');
+  list.innerHTML = players.map(p => `
+    <div class="player-item">
+      <span class="name">${p.name}${p.isHost ? '<span class="host-badge">👑房主</span>' : ''}</span>
+      <span class="status ${p.ready ? 'ready' : 'waiting'}">${p.ready ? '✅ 已准备' : '⏳ 等待中'}</span>
+    </div>
+  `).join('');
+  
+  const actions = document.getElementById('room-actions');
+  const myPlayer = players.find(p => p.id === socket.id);
+  
+  let html = '';
+  if (myPlayer) {
+    if (!myPlayer.ready) {
+      html += `<button class="btn" style="flex:1" onclick="setReady(true)">✅ 准备</button>`;
+    } else {
+      html += `<button class="btn" style="flex:1;background:linear-gradient(135deg,#e67e22,#f39c12)" onclick="setReady(false)">取消准备</button>`;
+    }
+  }
+  
+  if (isHost && players.length >= 2 && players.every(p => p.ready)) {
+    html += `<button class="btn" style="flex:1;background:linear-gradient(135deg,#27ae60,#2ecc71)" onclick="startMultiGame()">🎮 开始游戏</button>`;
+  }
+  
+  if (isHost) {
+    html += `<button class="btn" style="flex:1;background:linear-gradient(135deg,#e74c3c,#c0392b)" onclick="leaveRoom()">离开房间</button>`;
+  }
+  
+  actions.innerHTML = html;
+}
+
+function setReady(ready) {
+  if (socket) socket.emit('setReady', { ready: ready });
+}
+
+function startMultiGame() {
+  if (socket) socket.emit('startGame');
+}
+
+function leaveRoom() {
+  if (socket) {
+    socket.disconnect();
+  }
+  roomId = null;
+  isHost = false;
+  document.getElementById('room').style.display = 'none';
+  document.getElementById('lobby').style.display = 'flex';
+}
+
+// ==================== 单人游戏 ====================
+function startSingleGame() {
+  const DEFAULT_NAMES = ['湾区大亨', '地产之王', '投资大佬', '创业先锋', '财富猎人'];
+  const inputName = document.getElementById('nm').value.trim();
+  const n = inputName || DEFAULT_NAMES[Math.floor(Math.random() * DEFAULT_NAMES.length)];
+  
+  G = {
+    ps: [
+      { id: 'local-p1', n: n, m: 15000, pos: 1, pr: [] },
+      { id: 'local-ai', n: '电脑', m: 15000, pos: 1, pr: [] }
+    ],
+    cp: 0,
+    ph: 'action',
+    own: {},
+    ap: 1,
+    highlighted: [],
+    year: 1990,
+    turn: 0,
+    triggeredEvents: {}
+  };
+  
+  document.getElementById('lobby').style.display = 'none';
+  document.getElementById('game').style.display = 'flex';
+  document.getElementById('modal').classList.remove('show');
+  myPlayerIndex = 0;
+  
+  setTimeout(() => {
+    if (!sceneInitialized) {
+      init3D();
+      sceneInitialized = true;
+    }
+    createPlayers();
+    uUI();
+  }, 100);
+  
+  // 初始化时间线
+  setTimeout(() => initTimeline(), 200);
+  
+  // 初始化操作记录
+  clearActionLog();
+  logAction('系统', 'event', `游戏开始！年份 ${G.year} 年`);
+  
+  // 检查新手引导
+  checkTutorial();
+}
+
+// ==================== 3D 场景 ====================
+// ========== 城市颜色映射（根据最佳产业） ==========
+function getCityColor(city) {
+  const type = INDUSTRY_TYPES[city.best];
+  return type ? type.color : 0x808080;
+}
+
+// ========== 创建地块基座（动漫风格可爱配色） ==========
+function createCityTile(city) {
+  const group = new THREE.Group();
+  const terrain = TERRAIN[city.terrain] || TERRAIN.plain;
+  const size = (city.size || 1) * 22;
+
+  // 动漫风格柔和颜色
+  const animeColors = [0xFFB6C1, 0x87CEEB, 0xDDA0DD, 0xF0E68C, 0x98FB98, 0xFFA07A, 0xADD8E6, 0xFFDAB9];
+  
+  // 地块基座 - 动漫风格柔和色彩
+  const sides = city.terrain === 'coastal' ? 6 : city.terrain === 'mountain' ? 8 : 5;
+  const baseGeo = new THREE.CylinderGeometry(size, size * 1.15, 5, sides);
+  const baseMat = new THREE.MeshStandardMaterial({ 
+    color: animeColors[city.id % animeColors.length],
+    roughness: 0.8,
+    metalness: 0.1
+  });
+  const base = new THREE.Mesh(baseGeo, baseMat);
+  base.position.y = -2.5;
+  base.receiveShadow = true;
+  group.add(base);
+
+  // 地块顶面（动漫风格粉嫩色）
+  const topGeo = new THREE.CylinderGeometry(size * 0.95, size, 1, sides);
+  const topMat = new THREE.MeshStandardMaterial({
+    color: new THREE.Color(animeColors[(city.id + 1) % animeColors.length]).offsetHSL(0, -0.05, 0.1),
+    roughness: 0.9,
+    metalness: 0
+  });
+  const top = new THREE.Mesh(topGeo, topMat);
+  top.position.y = 0;
+  top.receiveShadow = true;
+  group.add(top);
+
+  // 动漫风格装饰边框
+  const ringGeo = new THREE.TorusGeometry(size * 0.98, 1.2, 8, sides);
+  const ringMat = new THREE.MeshStandardMaterial({ 
+    color: getCityColor(city), 
+    metalness: 0.3,
+    roughness: 0.4,
+    emissive: getCityColor(city),
+    emissiveIntensity: 0.1
+  });
+  const ring = new THREE.Mesh(ringGeo, ringMat);
+  ring.rotation.x = Math.PI / 2;
+  ring.position.y = 0.5;
+  group.add(ring);
+
+  // 沿海城市添加动漫风格水波纹（粉色系）
+  if (city.terrain === 'coastal') {
+    const waterGeo = new THREE.RingGeometry(size * 1.15, size * 1.4, 32);
+    const waterMat = new THREE.MeshStandardMaterial({
+      color: 0x87CEEB,
+      transparent: true,
+      opacity: 0.5,
+      roughness: 0.2,
+      metalness: 0.2
+    });
+    const water = new THREE.Mesh(waterGeo, waterMat);
+    water.rotation.x = -Math.PI / 2;
+    water.position.y = -4.5;
+    group.add(water);
+  }
+
+  // 山地城市添加动漫风格小丘（柔和棕色系）
+  if (city.terrain === 'mountain') {
+    for (let i = 0; i < 3; i++) {
+      const hillSize = 4 + Math.random() * 4;
+      const hillGeo = new THREE.ConeGeometry(hillSize, hillSize * 1.5, 6);
+      const hillMat = new THREE.MeshStandardMaterial({
+        color: animeColors[(city.id + i) % animeColors.length],
+        roughness: 0.8
+      });
+      const hill = new THREE.Mesh(hillGeo, hillMat);
+      const angle = (i / 3) * Math.PI * 2 + Math.random() * 0.5;
+      const dist = size * 0.5 + Math.random() * 3;
+      hill.position.set(Math.cos(angle) * dist, 2, Math.sin(angle) * dist);
+      hill.castShadow = true;
+      group.add(hill);
+    }
+  }
+
+  // 平原城市添加动漫风格小树（柔和绿色）
+  if (city.terrain === 'plain') {
+    for (let i = 0; i < 4; i++) {
+      // 树干
+      const trunkGeo = new THREE.CylinderGeometry(0.4, 0.5, 2.5, 6);
+      const trunkMat = new THREE.MeshStandardMaterial({ color: 0x8B7355 });
+      const trunk = new THREE.Mesh(trunkGeo, trunkMat);
+      const angle = (i / 4) * Math.PI * 2 + Math.random() * 0.8;
+      const dist = size * 0.6 + Math.random() * 3;
+      trunk.position.set(Math.cos(angle) * dist, 1.5, Math.sin(angle) * dist);
+      group.add(trunk);
+      
+      // 树叶 - 动漫风格圆润
+      const treeGeo = new THREE.SphereGeometry(2.5, 8, 8);
+      const treeMat = new THREE.MeshStandardMaterial({ 
+        color: animeColors[(city.id + i + 2) % animeColors.length], 
+        roughness: 0.9 
+      });
+      const tree = new THREE.Mesh(treeGeo, treeMat);
+      tree.position.set(Math.cos(angle) * dist, 3.5, Math.sin(angle) * dist);
+      tree.castShadow = true;
+      group.add(tree);
+    }
+  }
+
+  return group;
+}
+
+// ========== 创建地标建筑（动漫风格可爱配色） ==========
+function createLandmark(cityId) {
+  const group = new THREE.Group();
+  const city = CITIES.find(c => c.id === cityId);
+  if (!city) return group;
+  
+  // 动漫风格柔和颜色
+  const animeColors = [0xFFB6C1, 0x87CEEB, 0xDDA0DD, 0xF0E68C, 0x98FB98];
+  const baseColor = animeColors[cityId % animeColors.length];
+  
+  // 添加地块基座
+  const tile = createCityTile(city);
+  group.add(tile);
+  
+  // 主要城市使用GLTF模型
+  if (towerModel && ['深圳', '香港', '广州'].includes(city.n)) {
+    const model = towerModel.clone();
+    // 根据城市调整比例
+    if (city.n === '深圳') {
+      model.scale.set(1.2, 1.5, 1.2);
+    } else if (city.n === '香港') {
+      model.scale.set(1.0, 1.3, 1.0);
+    } else if (city.n === '广州') {
+      model.scale.set(1.3, 1.6, 1.3);
+    }
+    model.traverse((child) => {
+      if (child.isMesh) {
+        child.castShadow = true;
+        child.receiveShadow = true;
+      }
+    });
+    group.add(model);
+    return group;
+  }
+  
+  // 各城市地标建筑 - 动漫风格
+  switch (city.n) {
+    case '深圳': {
+      // 动漫风格粉色塔楼
+      const tower = new THREE.Mesh(new THREE.ConeGeometry(6, 45, 4), new THREE.MeshStandardMaterial({ 
+        color: 0xFFB6C1, metalness: 0.4, roughness: 0.4 
+      }));
+      tower.position.y = 22; tower.castShadow = true; group.add(tower);
+      // 发光顶部
+      const spire = new THREE.Mesh(new THREE.ConeGeometry(1, 8, 4), new THREE.MeshStandardMaterial({ 
+        color: 0xFFD700, metalness: 0.8, emissive: 0xFFD700, emissiveIntensity: 0.3 
+      }));
+      spire.position.y = 48; group.add(spire);
+      break;
+    }
+    case '香港': {
+      // 动漫风格蓝色三角形大厦
+      const shape = new THREE.Shape();
+      shape.moveTo(0, -6); shape.lineTo(5, 6); shape.lineTo(-5, 6); shape.closePath();
+      const geometry = new THREE.ExtrudeGeometry(shape, { depth: 40, bevelEnabled: false });
+      const tower = new THREE.Mesh(geometry, new THREE.MeshStandardMaterial({ 
+        color: 0x87CEEB, metalness: 0.4, roughness: 0.5 
+      }));
+      tower.rotation.x = -Math.PI / 2; tower.castShadow = true; group.add(tower);
+      break;
+    }
+    case '广州': {
+      // 动漫风格紫色腰鼓塔
+      const body = new THREE.Mesh(new THREE.CylinderGeometry(4, 6, 40, 16), new THREE.MeshStandardMaterial({ 
+        color: 0xDDA0DD, metalness: 0.2, roughness: 0.6 
+      }));
+      body.position.y = 20; body.castShadow = true; group.add(body);
+      const waist = new THREE.Mesh(new THREE.TorusGeometry(3, 1.5, 8, 16), new THREE.MeshStandardMaterial({ 
+        color: 0xFF69B4, metalness: 0.3 
+      }));
+      waist.position.y = 25; waist.rotation.x = Math.PI / 2; group.add(waist);
+      const antenna = new THREE.Mesh(new THREE.CylinderGeometry(0.5, 0.5, 10), new THREE.MeshStandardMaterial({ 
+        color: 0x666666 
+      }));
+      antenna.position.y = 45; group.add(antenna);
+      break;
+    }
+    case '澳门': {
+      // 动漫风格金色牌坊
+      const wall = new THREE.Mesh(new THREE.BoxGeometry(20, 35, 4), new THREE.MeshStandardMaterial({ 
+        color: 0xF0E68C, metalness: 0.2 
+      }));
+      wall.position.y = 17; wall.castShadow = true; group.add(wall);
+      const arch = new THREE.Mesh(new THREE.CylinderGeometry(4, 4, 4, 16, 1, false, 0, Math.PI), new THREE.MeshStandardMaterial({ 
+        color: 0xD4A574 
+      }));
+      arch.position.set(0, 8, 2); arch.rotation.x = Math.PI / 2; group.add(arch);
+      // 装饰星星
+      for (let s = 0; s < 5; s++) {
+        const starGeo = new THREE.OctahedronGeometry(1.5);
+        const starMat = new THREE.MeshStandardMaterial({ color: 0xFFD700, emissive: 0xFFD700, emissiveIntensity: 0.3 });
+        const star = new THREE.Mesh(starGeo, starMat);
+        star.position.set((s - 2) * 4, 30, 2.5);
+        group.add(star);
+      }
+      break;
+    }
+    case '珠海': {
+      // 动漫风格粉色珍珠塔
+      const base = new THREE.Mesh(new THREE.CylinderGeometry(6, 8, 8), new THREE.MeshStandardMaterial({ 
+        color: 0xFFB6C1 
+      }));
+      base.position.y = 4; group.add(base);
+      const body = new THREE.Mesh(new THREE.CylinderGeometry(3, 4, 20), new THREE.MeshStandardMaterial({ 
+        color: 0xFFC0CB 
+      }));
+      body.position.y = 18; body.castShadow = true; group.add(body);
+      const head = new THREE.Mesh(new THREE.SphereGeometry(4), new THREE.MeshStandardMaterial({ 
+        color: 0xFFE4E1 
+      }));
+      head.position.y = 32; group.add(head);
+      const pearl = new THREE.Mesh(new THREE.SphereGeometry(2), new THREE.MeshStandardMaterial({ 
+        color: 0xFFD700, metalness: 0.8, emissive: 0xFFD700, emissiveIntensity: 0.2 
+      }));
+      pearl.position.set(5, 30, 0); group.add(pearl);
+      break;
+    }
+    case '东莞': {
+      // 动漫风格蓝色圆形工坊
+      const dome = new THREE.Mesh(new THREE.SphereGeometry(15, 16, 8, 0, Math.PI * 2, 0, Math.PI / 2), new THREE.MeshStandardMaterial({ 
+        color: 0x87CEEB, metalness: 0.2, roughness: 0.6 
+      }));
+      dome.position.y = 0; dome.castShadow = true; group.add(dome);
+      const base = new THREE.Mesh(new THREE.CylinderGeometry(16, 16, 5), new THREE.MeshStandardMaterial({ 
+        color: 0xB0E0E6 
+      }));
+      base.position.y = 2; group.add(base);
+      break;
+    }
+    case '佛山': {
+      // 动漫风格棕色传统建筑
+      const main = new THREE.Mesh(new THREE.BoxGeometry(18, 15, 12), new THREE.MeshStandardMaterial({ 
+        color: 0xF4A460 
+      }));
+      main.position.y = 7; main.castShadow = true; group.add(main);
+      const roof = new THREE.Mesh(new THREE.ConeGeometry(14, 8, 4), new THREE.MeshStandardMaterial({ 
+        color: 0xFFA07A 
+      }));
+      roof.position.y = 19; roof.rotation.y = Math.PI / 4; group.add(roof);
+      break;
+    }
+    case '中山': {
+      // 动漫风格绿色纪念塔
+      const pedestal = new THREE.Mesh(new THREE.BoxGeometry(10, 12, 10), new THREE.MeshStandardMaterial({ 
+        color: 0x98FB98 
+      }));
+      pedestal.position.y = 6; group.add(pedestal);
+      const body = new THREE.Mesh(new THREE.CylinderGeometry(3, 4, 18), new THREE.MeshStandardMaterial({ 
+        color: 0x90EE90 
+      }));
+      body.position.y = 21; body.castShadow = true; group.add(body);
+      const head = new THREE.Mesh(new THREE.SphereGeometry(3), new THREE.MeshStandardMaterial({ 
+        color: 0x8FBC8F 
+      }));
+      head.position.y = 32; group.add(head);
+      break;
+    }
+    case '惠州': {
+      // 动漫风格棕色古塔
+      const tower = new THREE.Mesh(new THREE.CylinderGeometry(5, 6, 35, 6), new THREE.MeshStandardMaterial({ 
+        color: 0xD2B48C 
+      }));
+      tower.position.y = 17; tower.castShadow = true; group.add(tower);
+      const top = new THREE.Mesh(new THREE.ConeGeometry(6, 8, 6), new THREE.MeshStandardMaterial({ 
+        color: 0xF5DEB3 
+      }));
+      top.position.y = 38; group.add(top);
+      break;
+    }
+    case '肇庆': {
+      // 动漫风格彩色岩石山
+      const rockColors = [0xB0C4DE, 0xADD8E6, 0xB0E0E6, 0x87CEEB, 0x87CEFA];
+      for (let i = 0; i < 5; i++) {
+        const rock = new THREE.Mesh(new THREE.DodecahedronGeometry(5 + Math.random() * 3), new THREE.MeshStandardMaterial({ 
+          color: rockColors[i % rockColors.length], roughness: 0.8 
+        }));
+        rock.position.set((i - 2) * 5 + Math.random() * 3, 8 + Math.random() * 5, Math.random() * 6 - 3);
+        rock.rotation.set(Math.random(), Math.random(), Math.random()); rock.castShadow = true; group.add(rock);
+      }
+      break;
+    }
+    case '江门': {
+      // 动漫风格黄色侨乡塔
+      const tower = new THREE.Mesh(new THREE.BoxGeometry(12, 35, 12), new THREE.MeshStandardMaterial({ 
+        color: 0xFFDAB9 
+      }));
+      tower.position.y = 17; tower.castShadow = true; group.add(tower);
+      const top = new THREE.Mesh(new THREE.BoxGeometry(14, 5, 14), new THREE.MeshStandardMaterial({ 
+        color: 0xFFE4C4 
+      }));
+      top.position.y = 37; group.add(top);
+      for (let i = 0; i < 3; i++) {
+        const win = new THREE.Mesh(new THREE.BoxGeometry(2, 3, 1), new THREE.MeshStandardMaterial({ 
+          color: 0x333333 
+        }));
+        win.position.set(0, 10 + i * 8, 6.5); group.add(win);
+      }
+      break;
+    }
+    default: {
+      const building = new THREE.Mesh(new THREE.BoxGeometry(12, 25, 12), new THREE.MeshStandardMaterial({ 
+        color: baseColor 
+      }));
+      building.position.y = 12; building.castShadow = true; group.add(building);
+    }
+  }
+  
+  return group;
+}
+
+function init3D() {
+  const container = document.getElementById('scene');
+  scene = new THREE.Scene();
+  scene.background = new THREE.Color(0x6BAED6); // 更柔和的天空蓝
+  
+  camera = new THREE.PerspectiveCamera(60, container.clientWidth / container.clientHeight, 0.1, 3000);
+  camera.position.set(0, 400, 350);
+  camera.lookAt(0, 0, 0);
+  
+  renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
+  renderer.setSize(container.clientWidth, container.clientHeight);
+  renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+  renderer.shadowMap.enabled = true;
+  renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+  container.appendChild(renderer.domElement);
+  
+  // ========== OrbitControls 缩放和旋转 ==========
+  controls = new THREE.OrbitControls(camera, renderer.domElement);
+  controls.enableDamping = true;
+  controls.dampingFactor = 0.05;
+  controls.enableZoom = true;
+  controls.enablePan = true;
+  controls.enableRotate = true;
+  controls.minDistance = 80;
+  controls.maxDistance = 700;
+  controls.maxPolarAngle = Math.PI / 2 - 0.1; // 防止看到地下
+  controls.target.set(0, 0, 0);
+  
+  // ========== 改进光照 ==========
+  // 环境光
+  const ambientLight = new THREE.AmbientLight(0xB4D7E8, 0.6);
+  scene.add(ambientLight);
+  
+  // 主方向光（太阳光）
+  const sunLight = new THREE.DirectionalLight(0xFFFAF0, 1.0);
+  sunLight.position.set(100, 200, 150);
+  sunLight.castShadow = true;
+  sunLight.shadow.mapSize.width = 2048;
+  sunLight.shadow.mapSize.height = 2048;
+  sunLight.shadow.camera.near = 10;
+  sunLight.shadow.camera.far = 500;
+  sunLight.shadow.camera.left = -300;
+  sunLight.shadow.camera.right = 300;
+  sunLight.shadow.camera.top = 300;
+  sunLight.shadow.camera.bottom = -300;
+  sunLight.shadow.bias = -0.0001;
+  scene.add(sunLight);
+  
+  // 补光
+  const fillLight = new THREE.DirectionalLight(0x87CEEB, 0.3);
+  fillLight.position.set(-80, 100, -80);
+  scene.add(fillLight);
+  
+  // ========== 地面纹理（海洋+陆地） ==========
+  // createGroundTexture(); // 已禁用
+  
+  // ========== 初始化GLTF加载器 ==========
+  gltfLoader = new THREE.GLTFLoader();
+  loadTowerModel();
+  
+  // 城市建筑
+  CITIES.forEach(c => {
+    const landmark = createLandmark(c.id);
+    landmark.position.set(c.x - 150, 0, c.z - 200);
+    landmark.userData = { cityId: c.id };
+    scene.add(landmark);
+    
+    const hitArea = new THREE.Mesh(new THREE.SphereGeometry(20, 8, 8), new THREE.MeshBasicMaterial({ visible: false }));
+    hitArea.position.y = 15;
+    hitArea.userData.cityId = c.id;
+    landmark.add(hitArea);
+    
+    cityMeshes[c.id] = landmark;
+    
+    const div = document.createElement('div');
+    div.textContent = c.n;
+    div.style.cssText = 'position:absolute;color:#333;font-size:10px;font-weight:600;background:rgba(255,255,255,0.85);padding:1px 4px;border-radius:3px;cursor:pointer;transform:translate(-50%,-100%);margin-top:-15px;z-index:80;';
+    div.onclick = function(e) {
+      e.stopPropagation();
+      handleCityClick(c.id);
+    };
+    document.getElementById('mid').appendChild(div);
+    c.label = div;
+  });
+  
+  // ========== 美化道路 ==========
+  createRoads();
+  
+  // ========== 触摸支持 ==========
+  renderer.domElement.addEventListener('touchstart', handleTouch, { passive: false });
+  
+  // 点击检测
+  renderer.domElement.addEventListener('click', handleSceneClick);
+  
+  animate();
+  
+  window.addEventListener('resize', () => {
+    camera.aspect = container.clientWidth / container.clientHeight;
+    camera.updateProjectionMatrix();
+    renderer.setSize(container.clientWidth, container.clientHeight);
+  });
+}
+
+// ========== 加载GLTF塔楼模型 ==========
+function loadTowerModel() {
+  gltfLoader.load(
+    '/genshin-3d-models/viewer/models/tower.glb',
+    (gltf) => {
+      towerModel = gltf.scene;
+      towerModel.traverse((child) => {
+        if (child.isMesh) {
+          child.castShadow = true;
+          child.receiveShadow = true;
+        }
+      });
+      console.log('Tower模型加载成功');
+      // 重新创建主要城市建筑
+      refreshMajorBuildings();
+    },
+    undefined,
+    (error) => {
+      console.log('Tower模型加载失败，使用几何体替代:', error);
+    }
+  );
+}
+
+// ========== 刷新主要城市建筑（使用GLTF模型） ==========
+function refreshMajorBuildings() {
+  const majorCities = ['深圳', '香港', '广州'];
+  majorCities.forEach(name => {
+    const city = CITIES.find(c => c.n === name);
+    if (city && cityMeshes[city.id]) {
+      // 移除旧建筑
+      const oldMesh = cityMeshes[city.id];
+      scene.remove(oldMesh);
+      
+      // 创建新建筑
+      const newMesh = createLandmark(city.id);
+      newMesh.position.set(city.x - 150, 0, city.z - 200);
+      newMesh.userData = { cityId: city.id };
+      scene.add(newMesh);
+      
+      const hitArea = new THREE.Mesh(new THREE.SphereGeometry(20, 8, 8), new THREE.MeshBasicMaterial({ visible: false }));
+      hitArea.position.y = 15;
+      hitArea.userData.cityId = city.id;
+      newMesh.add(hitArea);
+      
+      cityMeshes[city.id] = newMesh;
+    }
+  });
+}
+
+// ========== 创建地面纹理（真实大湾区地理环境） ==========
+function createGroundTexture() {
+  const canvas = document.createElement('canvas');
+  canvas.width = 2048;
+  canvas.height = 2048;
+  const ctx = canvas.getContext('2d');
+  
+  // 南海深海背景
+  const oceanGradient = ctx.createRadialGradient(1024, 1024, 0, 1024, 1024, 1400);
+  oceanGradient.addColorStop(0, '#1E5F8A');
+  oceanGradient.addColorStop(0.4, '#164D70');
+  oceanGradient.addColorStop(0.7, '#0F3D5C');
+  oceanGradient.addColorStop(1, '#082D48');
+  ctx.fillStyle = oceanGradient;
+  ctx.fillRect(0, 0, 2048, 2048);
+  
+  // 添加南海波纹
+  ctx.strokeStyle = 'rgba(255, 255, 255, 0.03)';
+  ctx.lineWidth = 3;
+  for (let i = 0; i < 120; i++) {
+    ctx.beginPath();
+    const startX = Math.random() * 2048;
+    const startY = Math.random() * 2048;
+    ctx.moveTo(startX, startY);
+    ctx.bezierCurveTo(
+      startX + 30 + Math.random() * 80, startY + 10 + Math.random() * 30,
+      startX + 80 + Math.random() * 80, startY - 10 - Math.random() * 30,
+      startX + 150 + Math.random() * 100, startY
+    );
+    ctx.stroke();
+  }
+  
+  // 绘制大湾区陆地（基于真实地图的珠江三角洲）
+  // 陆地颜色：沿海平原浅绿，内陆深绿，山区橄榄绿
+  function drawLand(points, color) {
+    ctx.fillStyle = color;
+    ctx.beginPath();
+    ctx.moveTo(points[0][0], points[0][1]);
+    for (let i = 1; i < points.length; i++) {
+      ctx.lineTo(points[i][0], points[i][1]);
+    }
+    ctx.closePath();
+    ctx.fill();
+  }
+  
+  // 北部内陆地区（肇庆、清远、广州北部）- 山区/丘陵
+  const northLand = [
+    [350, 400], [450, 380], [550, 420], [600, 500],
+    [650, 580], [600, 650], [500, 680], [400, 650], [350, 550]
+  ];
+  drawLand(northLand, '#5B7345');
+  
+  // 西北江门、鹤山地区
+  const jiangmenWest = [
+    [400, 650], [500, 680], [550, 750], [520, 820],
+    [450, 850], [380, 800], [350, 720]
+  ];
+  drawLand(jiangmenWest, '#6B834A');
+  
+  // 佛山、广州地区 - 珠江平原
+  const guangzhouPlain = [
+    [550, 420], [650, 400], [750, 450], [800, 520],
+    [780, 600], [700, 650], [600, 650], [550, 580], [500, 520]
+  ];
+  drawLand(guangzhouPlain, '#7DA355');
+  
+  // 东莞地区 - 平原
+  const dongguanPlain = [
+    [750, 450], [850, 420], [950, 480], [980, 560],
+    [950, 620], [880, 650], [800, 620], [750, 560]
+  ];
+  drawLand(dongguanPlain, '#8DB563');
+  
+  // 深圳、东莞东南部 - 沿海平原
+  const shenzhenCoast = [
+    [950, 560], [1050, 550], [1150, 600], [1200, 700],
+    [1180, 800], [1100, 850], [1000, 820], [950, 720], [950, 620]
+  ];
+  drawLand(shenzhenCoast, '#9BC76A');
+  
+  // 香港岛及新界
+  const hongkongLand = [
+    [1150, 550], [1250, 520], [1380, 580], [1450, 680],
+    [1420, 780], [1300, 820], [1200, 780], [1120, 700]
+  ];
+  drawLand(hongkongLand, '#7DA355');
+  // 香港岛
+  ctx.fillStyle = '#8DB563';
+  ctx.beginPath();
+  ctx.ellipse(1350, 650, 80, 40, 0.3, 0, Math.PI * 2);
+  ctx.fill();
+  
+  // 中山、珠海北部
+  const zhuhaiNorth = [
+    [700, 650], [800, 680], [880, 750], [850, 820],
+    [750, 850], [650, 800], [620, 720]
+  ];
+  drawLand(zhuhaiNorth, '#8DB563');
+  
+  // 珠海、澳门 - 沿海
+  const zhuhaiMacau = [
+    [750, 850], [850, 820], [920, 880], [950, 950],
+    [900, 1020], [820, 1040], [750, 1000], [700, 920]
+  ];
+  drawLand(zhuhaiMacau, '#9BC76A');
+  
+  // 惠州 - 东北部
+  const huizhouLand = [
+    [980, 400], [1100, 380], [1200, 450], [1250, 550],
+    [1200, 650], [1100, 680], [1000, 620], [950, 540]
+  ];
+  drawLand(huizhouLand, '#6B834A');
+  
+  // 绘制珠江河道系统
+  ctx.strokeStyle = '#3A7CA5';
+  ctx.lineWidth = 12;
+  ctx.lineCap = 'round';
+  
+  // 北江
+  ctx.beginPath();
+  ctx.moveTo(480, 420);
+  ctx.bezierCurveTo(550, 480, 650, 550, 800, 620);
+  ctx.stroke();
+  
+  // 西江
+  ctx.lineWidth = 15;
+  ctx.beginPath();
+  ctx.moveTo(400, 600);
+  ctx.bezierCurveTo(480, 650, 580, 720, 700, 780);
+  ctx.stroke();
+  
+  // 东江（珠江口东岸）
+  ctx.lineWidth = 10;
+  ctx.beginPath();
+  ctx.moveTo(1050, 450);
+  ctx.bezierCurveTo(1100, 550, 1080, 650, 1000, 750);
+  ctx.stroke();
+  
+  // 珠江口主航道
+  ctx.strokeStyle = '#4A90B0';
+  ctx.lineWidth = 25;
+  ctx.beginPath();
+  ctx.moveTo(750, 700);
+  ctx.bezierCurveTo(850, 780, 950, 850, 1000, 950);
+  ctx.stroke();
+  
+  // 添加城市标记（白色圆点）
+  ctx.fillStyle = '#FFFFFF';
+  ctx.strokeStyle = '#333333';
+  ctx.lineWidth = 3;
+  const cityMarkers = [
+    { name: '肇庆', x: 480, y: 480 },
+    { name: '佛山', x: 620, y: 520 },
+    { name: '广州', x: 720, y: 480 },
+    { name: '东莞', x: 880, y: 520 },
+    { name: '惠州', x: 1080, y: 480 },
+    { name: '深圳', x: 1050, y: 680 },
+    { name: '香港', x: 1280, y: 650 },
+    { name: '中山', x: 780, y: 720 },
+    { name: '珠海', x: 850, y: 880 },
+    { name: '澳门', x: 880, y: 950 },
+    { name: '江门', x: 480, y: 720 }
+  ];
+  
+  cityMarkers.forEach(city => {
+    ctx.beginPath();
+    ctx.arc(city.x, city.y, 12, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.stroke();
+  });
+  
+  // 城市名称
+  ctx.fillStyle = '#1A3A4A';
+  ctx.font = 'bold 18px Arial';
+  ctx.textAlign = 'center';
+  cityMarkers.forEach(city => {
+    ctx.fillText(city.name, city.x, city.y - 20);
+  });
+  
+  // 添加水体高光（河口、海湾）
+  ctx.fillStyle = 'rgba(74, 144, 176, 0.3)';
+  ctx.beginPath();
+  ctx.ellipse(1100, 900, 150, 100, 0.2, 0, Math.PI * 2);
+  ctx.fill();
+  
+  // 海岸线高光
+  ctx.strokeStyle = 'rgba(255, 255, 255, 0.15)';
+  ctx.lineWidth = 4;
+  ctx.beginPath();
+  ctx.moveTo(1000, 850);
+  ctx.lineTo(1100, 950);
+  ctx.stroke();
+  
+  const texture = new THREE.CanvasTexture(canvas);
+  texture.wrapS = THREE.ClampToEdgeWrapping;
+  texture.wrapT = THREE.ClampToEdgeWrapping;
+  
+  const ground = new THREE.Mesh(
+    new THREE.PlaneGeometry(600, 600),
+    new THREE.MeshStandardMaterial({ 
+      map: texture,
+      roughness: 0.9,
+      metalness: 0.05
+    })
+  );
+  ground.rotation.x = -Math.PI / 2;
+  ground.position.y = -5;
+  ground.receiveShadow = true;
+  scene.add(ground);
+  
+  // 海洋底层
+  const oceanGeo = new THREE.PlaneGeometry(1000, 1000);
+  const oceanMat = new THREE.MeshStandardMaterial({ 
+    color: 0x082D48,
+    transparent: true,
+    opacity: 0.95,
+    roughness: 0.3,
+    metalness: 0.1
+  });
+  const ocean = new THREE.Mesh(oceanGeo, oceanMat);
+  ocean.rotation.x = -Math.PI / 2;
+  ocean.position.y = -6;
+  scene.add(ocean);
+}
+
+// ========== 美化道路 ==========
+function createRoads() {
+  const roadMaterial = new THREE.MeshStandardMaterial({
+    color: 0x555555,
+    roughness: 0.8,
+    metalness: 0.1
+  });
+  
+  const roadHighlightMaterial = new THREE.MeshStandardMaterial({
+    color: 0xFFEB3B, // 黄色道路中线
+    roughness: 0.6,
+    metalness: 0.2
+  });
+  
+  CITIES.forEach(c => {
+    c.adj.forEach(aid => {
+      if (c.id < aid) {
+        const a = CITIES.find(x => x.id === aid);
+        if (!a) return;
+        
+        const start = new THREE.Vector3(c.x - 150, 1, c.z - 200);
+        const end = new THREE.Vector3(a.x - 150, 1, a.z - 200);
+        
+        // 计算道路宽度（根据城市重要性）
+        const isMainRoad = ['深圳', '香港', '广州', '珠海', '澳门'].includes(c.n) || 
+                           ['深圳', '香港', '广州', '珠海', '澳门'].includes(a.n);
+        const roadWidth = isMainRoad ? 2.5 : 1.5;
+        
+        // 创建道路中线
+        const midPath = new THREE.LineCurve3(
+          new THREE.Vector3(start.x, 0.5, start.z),
+          new THREE.Vector3(end.x, 0.5, end.z)
+        );
+        const midGeo = new THREE.TubeGeometry(midPath, 3, 0.3, 6, false);
+        const midRoad = new THREE.Mesh(midGeo, roadHighlightMaterial);
+        scene.add(midRoad);
+        
+        // 创建主道路
+        const path = new THREE.LineCurve3(start, end);
+        const roadGeo = new THREE.TubeGeometry(path, 3, roadWidth, 8, false);
+        const road = new THREE.Mesh(roadGeo, roadMaterial);
+        road.receiveShadow = true;
+        scene.add(road);
+        
+        // 添加道路连接点
+        const jointGeo = new THREE.SphereGeometry(roadWidth + 0.3, 8, 8);
+        const joint1 = new THREE.Mesh(jointGeo, roadMaterial);
+        joint1.position.copy(start);
+        joint1.position.y = 1;
+        scene.add(joint1);
+        
+        const joint2 = new THREE.Mesh(jointGeo, roadMaterial);
+        joint2.position.copy(end);
+        joint2.position.y = 1;
+        scene.add(joint2);
+      }
+    });
+  });
+}
+
+// ========== 城市标签点击处理 ==========
+const cityLabels = {};
+
+function handleCityClick(cityId) {
+  const city = CITIES.find(c => c.id === cityId);
+  if (!city) return;
+  
+  // 调用新的城市点击处理
+  onCityClick(cityId);
+  
+  // 如果在移动模式且可移动
+  if (G.ph === 'move' && G.ap > 0) {
+    const curr = CITIES.find(c => c.id === G.ps[G.cp].pos);
+    if (curr && curr.adj && curr.adj.includes(cityId)) {
+      // 移动到该城市
+      const fromCity = curr.n;
+      const toCity = city.n;
+      
+      if (gameMode === 'multi') {
+        logAction(G.ps[G.cp].n, 'move', '从 ' + fromCity + ' 移动到 ' + toCity);
+        socket.emit('playerMove', { targetCityId: cityId });
+      } else {
+        G.ps[G.cp].pos = cityId;
+        G.ap--;
+        G.ph = 'action';
+        updatePlayerPos(G.cp);
+        clearHighlights();
+        document.getElementById('move-hint').style.display = 'none';
+        
+        logAction(G.ps[G.cp].n, 'move', `从 ${fromCity} 移动到 ${toCity}`);
+        
+        // 提示剩余行动点
+        const remainingAP = G.ap;
+        if (remainingAP > 0) {
+          showTurnNotice(`✅ 到达 ${toCity}<br><span style="font-size:14px;opacity:0.9">⚡ 剩余行动点: ${remainingAP}</span>`);
+        }
+        
+        // 清除选中状态
+        selectedCityId = null;
+        
+        uUI();
+        checkAutoEndTurn();
+      }
+    } else {
+      showNotice('⚠️ 无法到达该城市');
+    }
+  }
+}
+
+// ========== 自动结束回合检查 ==========
+function checkAutoEndTurn() {
+  // 检查是否需要自动结束回合
+  if (G.ap <= 0 && G.ph !== 'end') {
+    setTimeout(() => {
+      if (G.ap <= 0 && G.cp === 0) {
+        showTurnNotice('⏭️ 行动点用完，自动结束回合<br><span style="font-size:14px;opacity:0.9">⚡ 剩余: 0</span>');
+        endTurn();
+      }
+    }, 100);
+  }
+}
+
+// ========== 触摸处理 ==========
+function handleTouch(e) {
+  e.preventDefault();
+  const touch = e.touches[0];
+  const mouseEvent = new MouseEvent('click', {
+    clientX: touch.clientX,
+    clientY: touch.clientY
+  });
+  renderer.domElement.dispatchEvent(mouseEvent);
+}
+
+function handleSceneClick(e) {
+  const rect = renderer.domElement.getBoundingClientRect();
+  const x = ((e.clientX - rect.left) / rect.width) * 2 - 1;
+  const y = -((e.clientY - rect.top) / rect.height) * 2 + 1;
+  const raycaster = new THREE.Raycaster();
+  raycaster.setFromCamera({ x, y }, camera);
+  const hits = raycaster.intersectObjects(Object.values(cityMeshes), true);
+  
+  if (hits.length > 0) {
+    let obj = hits[0].object;
+    while (obj && !obj.userData.cityId && obj.parent) obj = obj.parent;
+    const id = obj ? obj.userData.cityId : undefined;
+    
+    if (id !== undefined) {
+      handleCityClick(id);
+    }
+  }
+}
+
+// ==================== 玩家模型 ====================
+// 动漫角色头部组件
+function createAnimeHead(color, index) {
+  const group = new THREE.Group();
+  
+  // 头部 - 动漫风格大头
+  const headGeo = new THREE.SphereGeometry(12, 16, 16);
+  const headMat = new THREE.MeshStandardMaterial({ color: color, roughness: 0.7 });
+  const head = new THREE.Mesh(headGeo, headMat);
+  head.position.y = 20;
+  head.scale.set(1, 1.1, 0.9); // 椭圆脸
+  group.add(head);
+  
+  // 眼睛 - 动漫风格大眼
+  const eyeGeo = new THREE.SphereGeometry(3, 8, 8);
+  const eyeMat = new THREE.MeshStandardMaterial({ color: 0x333333 });
+  const leftEye = new THREE.Mesh(eyeGeo, eyeMat);
+  leftEye.position.set(-5, 21, 9);
+  leftEye.scale.set(1, 1.3, 0.8);
+  group.add(leftEye);
+  
+  const rightEye = new THREE.Mesh(eyeGeo, eyeMat);
+  rightEye.position.set(5, 21, 9);
+  rightEye.scale.set(1, 1.3, 0.8);
+  group.add(rightEye);
+  
+  // 眼睛高光
+  const highlightGeo = new THREE.SphereGeometry(1.2, 8, 8);
+  const highlightMat = new THREE.MeshBasicMaterial({ color: 0xFFFFFF });
+  const leftHighlight = new THREE.Mesh(highlightGeo, highlightMat);
+  leftHighlight.position.set(-3.5, 22, 11);
+  group.add(leftHighlight);
+  
+  const rightHighlight = new THREE.Mesh(highlightGeo, highlightMat);
+  rightHighlight.position.set(6.5, 22, 11);
+  group.add(rightHighlight);
+  
+  // 腮红
+  const cheekGeo = new THREE.SphereGeometry(2, 8, 8);
+  const cheekMat = new THREE.MeshStandardMaterial({ 
+    color: 0xFF9999, 
+    transparent: true, 
+    opacity: 0.6 
+  });
+  const leftCheek = new THREE.Mesh(cheekGeo, cheekMat);
+  leftCheek.position.set(-9, 18, 8);
+  leftCheek.scale.set(1.5, 1, 0.5);
+  group.add(leftCheek);
+  
+  const rightCheek = new THREE.Mesh(cheekGeo, cheekMat);
+  rightCheek.position.set(9, 18, 8);
+  rightCheek.scale.set(1.5, 1, 0.5);
+  group.add(rightCheek);
+  
+  // 头发 - 动漫风格
+  const hairColors = [0xFF69B4, 0x4169E1, 0xFFD700, 0xFF6347];
+  const hairColor = hairColors[index % hairColors.length];
+  const hairMat = new THREE.MeshStandardMaterial({ color: hairColor, roughness: 0.8 });
+  
+  // 刘海
+  const bangsGeo = new THREE.SphereGeometry(13, 16, 16, 0, Math.PI * 2, 0, Math.PI / 2.5);
+  const bangs = new THREE.Mesh(bangsGeo, hairMat);
+  bangs.position.y = 26;
+  bangs.position.z = 2;
+  bangs.scale.set(1.1, 0.9, 1);
+  group.add(bangs);
+  
+  // 头顶头发
+  const topHairGeo = new THREE.SphereGeometry(12, 16, 16, 0, Math.PI * 2, Math.PI / 3, Math.PI / 2);
+  const topHair = new THREE.Mesh(topHairGeo, hairMat);
+  topHair.position.y = 28;
+  group.add(topHair);
+  
+  // 侧边马尾
+  const sideHairGeo = new THREE.ConeGeometry(4, 15, 8);
+  const leftSideHair = new THREE.Mesh(sideHairGeo, hairMat);
+  leftSideHair.position.set(-12, 18, 0);
+  leftSideHair.rotation.z = 0.3;
+  group.add(leftSideHair);
+  
+  const rightSideHair = new THREE.Mesh(sideHairGeo, hairMat);
+  rightSideHair.position.set(12, 18, 0);
+  rightSideHair.rotation.z = -0.3;
+  group.add(rightSideHair);
+  
+  return group;
+}
+
+// 动漫角色身体组件
+function createAnimeBody(color) {
+  const group = new THREE.Group();
+  
+  // 身体 - 动漫风格胶囊形状
+  const bodyGeo = new THREE.CapsuleGeometry(8, 16, 4, 8);
+  const bodyMat = new THREE.MeshStandardMaterial({ color: color, roughness: 0.6 });
+  const body = new THREE.Mesh(bodyGeo, bodyMat);
+  body.position.y = 5;
+  group.add(body);
+  
+  // 披风/斗篷
+  const capeGeo = new THREE.ConeGeometry(14, 18, 4, 1, true);
+  const capeMat = new THREE.MeshStandardMaterial({ 
+    color: 0x8B4513, 
+    roughness: 0.7,
+    side: THREE.DoubleSide 
+  });
+  const cape = new THREE.Mesh(capeGeo, capeMat);
+  cape.position.y = 2;
+  cape.rotation.y = Math.PI;
+  group.add(cape);
+  
+  return group;
+}
+
+// 创建动漫风格玩家模型
+function createAnimePlayer(color, index, onComplete) {
+  const group = new THREE.Group();
+  
+  // 创建头部
+  const head = createAnimeHead(color, index);
+  group.add(head);
+  
+  // 创建身体
+  const body = createAnimeBody(color);
+  group.add(body);
+  
+  // 缩放整个角色
+  group.scale.set(1.5, 1.5, 1.5);
+  
+  // 返回模型
+  if (onComplete) {
+    onComplete(group);
+  }
+  
+  return group;
+}
+
+// 尝试加载GLB模型（预留接口）
+function loadPlayerGLB(modelUrl, color, index, onSuccess, onFail) {
+  const loader = new THREE.GLTFLoader();
+  loader.load(
+    modelUrl,
+    (gltf) => {
+      const model = gltf.scene;
+      model.scale.set(15, 15, 15);
+      model.rotation.y = Math.PI;
+      
+      // 根据玩家颜色染色
+      model.traverse((child) => {
+        if (child.isMesh) {
+          child.material = new THREE.MeshStandardMaterial({
+            color: color,
+            roughness: 0.5,
+            metalness: 0.1
+          });
+        }
+      });
+      
+      if (onSuccess) onSuccess(model);
+    },
+    undefined,
+    (error) => {
+      console.log('GLB模型加载失败:', error);
+      if (onFail) onFail();
+    }
+  );
+}
+
+function createPlayers() {
+  // 清除旧玩家
+  playerModels.forEach(m => { if (m) scene.remove(m); });
+  playerModels = [];
+  
+  // 玩家浮动动画状态
+  playerFloatStates = [];
+  
+  G.ps.forEach((p, i) => {
+    const color = PLAYER_COLORS[i % PLAYER_COLORS.length];
+    const pi = i;
+    
+    // 创建动漫风格角色
+    const group = new THREE.Group();
+    
+    // 头部
+    const head = createAnimeHead(color, i);
+    group.add(head);
+    
+    // 身体
+    const body = createAnimeBody(color);
+    group.add(body);
+    
+    // 缩放
+    group.scale.set(1.5, 1.5, 1.5);
+    
+    // 放置位置
+    const city = CITIES.find(c => c.id === p.pos);
+    if (city) {
+      group.position.set(city.x - 150, 0, city.z - 200);
+    }
+    
+    // 标识本地玩家
+    const isLocal = (gameMode === 'single' && i === 0) || (gameMode === 'multi' && p.id === mySocketId);
+    group.userData = { playerIndex: pi, isLocal: isLocal };
+    
+    scene.add(group);
+    playerModels[pi] = group;
+    
+    // 初始化浮动动画状态
+    playerFloatStates[pi] = {
+      baseY: 0,
+      time: Math.random() * Math.PI * 2 // 随机初始相位
+    };
+    
+    // 设置我的索引
+    if (isLocal) myPlayerIndex = pi;
+  });
+  
+  updateAllPlayerPositions();
+}
+
+// 玩家浮动动画状态
+let playerFloatStates = [];
+
+// 玩家浮动动画
+function animatePlayer(index) {
+  if (!playerModels[index] || !playerFloatStates[index]) return;
+  
+  const state = playerFloatStates[index];
+  const t = Date.now() * 0.002;
+  
+  // 浮动效果
+  playerModels[index].position.y = Math.sin(t + state.time) * 3;
+  
+  // 轻微摇摆
+  playerModels[index].rotation.y = Math.sin(t * 0.5 + state.time) * 0.15;
+}
+
+function updatePlayerPos(pi) {
+  const p = G.ps[pi];
+  if (!p || !playerModels[pi]) return;
+  const c = CITIES.find(x => x.id === p.pos);
+  if (!c) return;
+  
+  // 多个玩家偏移避免重叠
+  const sameCity = G.ps.filter(pp => pp.pos === p.pos);
+  const myIndex = sameCity.indexOf(p);
+  const offsetX = (myIndex - (sameCity.length - 1) / 2) * 20;
+  
+  playerModels[pi].position.set(c.x - 150 + offsetX, 0, c.z - 200 - 15);
+}
+
+function updateAllPlayerPositions() {
+  G.ps.forEach((p, i) => updatePlayerPos(i));
+}
+
+// ==================== 动画循环 ====================
+function animate() {
+  requestAnimationFrame(animate);
+  
+  // 更新OrbitControls阻尼
+  if (controls) {
+    controls.update();
+  }
+  
+  const t = Date.now() * 0.002;
+  // 动漫风格玩家浮动动画
+  playerModels.forEach((m, i) => {
+    if (m) animatePlayer(i);
+  });
+  
+  // 更新城市标签
+  CITIES.forEach(c => {
+    if (c && c.label && c.x !== undefined && c.z !== undefined) {
+      try {
+        const pos = new THREE.Vector3(c.x - 150, 25, c.z - 200);
+        pos.project(camera);
+        const x = (pos.x * 0.5 + 0.5) * renderer.domElement.clientWidth;
+        const y = (-pos.y * 0.5 + 0.5) * renderer.domElement.clientHeight;
+        c.label.style.left = x + 'px';
+        c.label.style.top = y + 'px';
+      } catch (e) {}
+    }
+  });
+  
+  // 脉冲动画 - 高亮环
+  if (G.ph === 'move' && G.highlighted.length > 0) {
+    const pulse = 0.7 + Math.sin(Date.now() * 0.005) * 0.3;
+    G.highlighted.forEach(id => {
+      if (cityMeshes[id]) {
+        const outerRing = cityMeshes[id].getObjectByName('highlight-outer-ring-' + id);
+        if (outerRing) {
+          outerRing.material.opacity = 0.3 + Math.sin(Date.now() * 0.008) * 0.2;
+        }
+        const innerRing = cityMeshes[id].getObjectByName('highlight-ring-' + id);
+        if (innerRing) {
+          innerRing.material.opacity = 0.6 + Math.sin(Date.now() * 0.006) * 0.2;
+        }
+      }
+    });
+  }
+  
+  renderer.render(scene, camera);
+}
+
+// ==================== 工业建筑 ====================
+function addIndustryMesh(cityId, playerId) {
+  const city = CITIES.find(c => c.id === cityId);
+  if (!city) return;
+  
+  const pi = G.ps.findIndex(p => p.id === playerId);
+  const color = pi >= 0 ? PLAYER_COLORS[pi % PLAYER_COLORS.length] : 0x8B4513;
+  
+  const ind = new THREE.Mesh(new THREE.BoxGeometry(8, 8, 8), new THREE.MeshStandardMaterial({ color: color }));
+  ind.position.set(city.x - 150, 15, city.z - 200);
+  ind.userData = { cityId: cityId, isIndustry: true, ownerId: playerId };
+  scene.add(ind);
+}
+
+// ==================== UI 更新 ====================
+function uUI() {
+  if (!G.ps || !G.ps.length) return; // 防止G未初始化时出错
+  
+  // 更新玩家状态栏
+  document.getElementById('st').innerHTML = G.ps.map((p, i) => {
+    const emoji = PLAYER_EMOJIS[i % PLAYER_EMOJIS.length];
+    const isLocal = (gameMode === 'single' && i === 0) || (gameMode === 'multi' && p.id === mySocketId);
+    const isCurrent = i === G.cp;
+    const online = gameMode === 'multi' ? (p.online !== false) : true;
+    return `<div class="pcard ${isCurrent ? 'on' : ''}" style="${!online ? 'opacity:0.4' : ''}">${emoji} ${p.n}${isLocal ? '(我)' : ''}<br><span class="m">$${p.m}</span> ⚡<span class="ap">${isCurrent ? G.ap : '-'}</span></div>`;
+  }).join('');
+  
+  document.getElementById('il').innerHTML = G.ps.map((p, i) => {
+    const emoji = PLAYER_EMOJIS[i % PLAYER_EMOJIS.length];
+    const isLocal = (gameMode === 'single' && i === 0) || (gameMode === 'multi' && p.id === mySocketId);
+    const online = gameMode === 'multi' ? (p.online !== false) : true;
+    return `<div class="pi" style="${!online ? 'opacity:0.4' : ''}"><span>${emoji} ${p.n}${isLocal ? '(我)' : ''} ${i === G.cp ? '◀' : ''}</span><br><span class="m">$${p.m}</span></div>`;
+  }).join('');
+  
+  document.getElementById('year').textContent = G.year;
+  
+  // 按钮状态 - 底部按钮
+  const isMyTurn = isMyTurnNow();
+  
+    
+  
+}
+
+
+
+
+// 更新右侧面板的城市信息
+
+
+// 更新右侧面板按钮状态
+
+
+// 移动到选中城市
+
+
+// 在当前位置建造
+
+
+// ==================== 城市点击处理（修改版） ====================
+function onCityClick(cityId) {
+  const city = CITIES[cityId];
+  const currentPos = G.ps[G.cp].pos;
+  const isAdjacent = CITIES[currentPos].adj.includes(cityId);
+  const isCurrentCity = cityId === currentPos;
+  
+  // 选中城市
+  selectedCityId = cityId;
+  
+  // 显示城市面板
+  showCityPanel(city);
+}
+
+function isMyTurnNow() {
+  if (gameMode === 'single') return G.cp === 0;
+  return G.ps[G.cp] && G.ps[G.cp].id === mySocketId;
+}
+
+function getCurrentPlayerName() {
+  if (!G.ps[G.cp]) return '?';
+  return G.ps[G.cp].n;
+}
+
+// ==================== 游戏操作 ====================
+function startMove() {
+  if (!isMyTurnNow() || G.ap <= 0) return;
+  
+  document.getElementById('modal').classList.remove('show');
+  G.ph = 'move';
+  clearHighlights();
+  
+  const curr = CITIES.find(x => x.id === G.ps[G.cp].pos);
+  if (curr && curr.adj) {
+    curr.adj.forEach(id => {
+      if (cityMeshes[id]) {
+        // 更明显的放大效果
+        cityMeshes[id].scale.set(1.5, 1.5, 1.5);
+        
+        // 添加发光环
+        const ringGeo = new THREE.RingGeometry(18, 24, 32);
+        const ringMat = new THREE.MeshBasicMaterial({ 
+          color: 0x27ae60, 
+          transparent: true, 
+          opacity: 0.8,
+          side: THREE.DoubleSide 
+        });
+        const ring = new THREE.Mesh(ringGeo, ringMat);
+        ring.rotation.x = -Math.PI / 2;
+        ring.position.y = 2;
+        ring.name = 'highlight-ring-' + id;
+        cityMeshes[id].add(ring);
+        
+        // 添加外层发光环（更大更亮）
+        const outerRingGeo = new THREE.RingGeometry(26, 32, 32);
+        const outerRingMat = new THREE.MeshBasicMaterial({ 
+          color: 0x2ecc71, 
+          transparent: true, 
+          opacity: 0.5,
+          side: THREE.DoubleSide 
+        });
+        const outerRing = new THREE.Mesh(outerRingGeo, outerRingMat);
+        outerRing.rotation.x = -Math.PI / 2;
+        outerRing.position.y = 2;
+        outerRing.name = 'highlight-outer-ring-' + id;
+        cityMeshes[id].add(outerRing);
+        
+        G.highlighted.push(id);
+      }
+    });
+    
+    document.getElementById('move-hint').style.display = 'block';
+  }
+  
+  if (gameMode === 'multi') {
+    socket.emit('highlightCities', { cityIds: G.highlighted });
+  }
+  
+  // 如果没有可移动城市（不在相邻位置），显示提示
+  if (G.highlighted.length === 0) {
+    showNotice('⚠️ 无法移动到相邻城市');
+  }
+  
+  // 更新右侧面板移动按钮状态
+  const moveBtn = document.getElementById('btn-move');
+  moveBtn.textContent = '⏸ 取消';
+  moveBtn.onclick = cancelMove;
+}
+
+function cancelMove() {
+  G.ph = 'action';
+  clearHighlights();
+  
+  // 恢复移动按钮
+  const moveBtn = document.getElementById('btn-move');
+  moveBtn.innerHTML = '<span class="btn-icon">🚶</span><span class="btn-text">移动</span>';
+  moveBtn.onclick = moveToCity;
+  
+  document.getElementById('move-hint').style.display = 'none';
+}
+
+function clearHighlights() {
+  G.highlighted.forEach(id => {
+    if (cityMeshes[id]) {
+      cityMeshes[id].scale.set(1, 1, 1);
+      // 移除高亮环
+      const ring = cityMeshes[id].getObjectByName('highlight-ring-' + id);
+      if (ring) cityMeshes[id].remove(ring);
+      // 移除外层高亮环
+      const outerRing = cityMeshes[id].getObjectByName('highlight-outer-ring-' + id);
+      if (outerRing) cityMeshes[id].remove(outerRing);
+    }
+  });
+  G.highlighted = [];
+  
+  if (gameMode === 'multi' && socket) {
+    socket.emit('highlightCities', { cityIds: [] });
+  }
+}
+
+function buildIndustry() {
+  if (!isMyTurnNow() || G.ap <= 0) return;
+  
+  const c = CITIES.find(x => x.id === G.ps[G.cp].pos);
+  if (!c) return;
+  
+  // 检查是否有可用槽位
+  const availableSlots = c.slots.filter(s => !s.built);
+  if (availableSlots.length === 0) {
+    alert('该城市所有槽位已满');
+    return;
+  }
+  
+  // 显示城市面板，让玩家选择槽位
+  showCityPanel(c);
+}
+
+function endTurn() {
+  if (!isMyTurnNow()) return;
+  
+  // 记录结束回合
+  logAction(G.ps[G.cp].n, 'endTurn', '结束回合');
+  
+  // 回合结束时计算所有玩家收益
+  calculateAllPlayersRevenue();
+  
+  if (gameMode === 'multi') {
+    socket.emit('endTurn');
+  } else {
+    // 单人模式 - 切换到AI
+    G.cp = 1;
+    uUI();
+    
+    setTimeout(() => aiTurn(), 1000);
+  }
+}
+
+// 计算所有玩家的回合收益
+function calculateAllPlayersRevenue() {
+  G.ps.forEach(player => {
+    let totalRevenue = 0;
+    const revenueDetails = [];
+    
+    // 遍历所有城市，收集该玩家拥有的槽位
+    CITIES.forEach(city => {
+      if (!city.slots) return;
+      city.slots.forEach(slot => {
+        if (slot.built && slot.owner === player.id) {
+          const indType = INDUSTRY_TYPES[slot.type];
+          if (indType) {
+            // 使用城市产业适配系数计算收益（含事件修正）
+            const baseBonus = indType.cityBonus ? (indType.cityBonus[city.n] || 1.0) : 1.0;
+            const eventMod = industryModifiers[city.n] ? (industryModifiers[city.n][slot.type] || 0) : 0;
+            const finalBonus = baseBonus + eventMod;
+            let revenue = Math.floor(indType.bonus * Math.max(0.1, finalBonus));
+            totalRevenue += revenue;
+            revenueDetails.push({ city: city.n, industry: indType.name, revenue: revenue, bonus: finalBonus });
+          }
+        }
+      });
+    });
+    
+    // 添加收益
+    if (totalRevenue > 0) {
+      player.m += totalRevenue;
+      // 记录收益
+      logAction(player.n, 'revenue', `${player.n} 产业收益 +$${totalRevenue}`);
+      console.log(player.n + ' 获得收益: $' + totalRevenue, revenueDetails);
+    }
+  });
+}
+
+// ==================== AI 逻辑 ====================
+function aiTurn() {
+  if (G.cp !== 1 || gameMode !== 'single') return;
+  
+  const ai = G.ps[1];
+  const curr = CITIES.find(x => x.id === ai.pos);
+  if (!curr || !curr.adj) { finishAiTurn(); return; }
+  
+  // 记录AI回合开始
+  logAction(ai.n, 'ai', 'AI 回合开始');
+  showTurnNotice(`${ai.n} 的回合<br><span style="font-size:14px;opacity:0.9">⚡ 剩余行动点: 1</span>`);
+  
+  // 延迟执行AI动作
+  setTimeout(() => {
+    // AI移动
+    const targetId = curr.adj[Math.floor(Math.random() * curr.adj.length)];
+    const fromCity = curr.n;
+    const toCity = CITIES.find(x => x.id === targetId)?.n || '?';
+    ai.pos = targetId;
+    updatePlayerPos(1);
+    
+    // 记录AI移动
+    logAction(ai.n, 'move', `从 ${fromCity} 移动到 ${toCity}`);
+    showTurnNotice(`🤖 AI到达 ${toCity}<br><span style="font-size:14px;opacity:0.9">⚡ 剩余: 0</span>`);
+    
+    // AI可能建造（在随机空槽位上）
+    setTimeout(() => {
+      const targetCity = CITIES.find(x => x.id === targetId);
+      if (targetCity && targetCity.slots) {
+        const emptySlot = targetCity.slots.find(s => !s.built);
+        if (emptySlot && Math.random() > 0.5 && ai.m >= emptySlot.price) {
+          // AI选择最佳匹配产业或随机
+          const bestType = targetCity.best;
+          const types = Object.keys(INDUSTRY_TYPES);
+          const chosenType = Math.random() > 0.3 ? bestType : types[Math.floor(Math.random() * types.length)];
+          const indType = INDUSTRY_TYPES[chosenType];
+          
+          emptySlot.built = true;
+          emptySlot.type = chosenType;
+          emptySlot.owner = ai.id;
+          ai.m -= emptySlot.price;
+          addIndustryMesh(targetId, ai.id);
+          
+          if (!G.own[targetId]) G.own[targetId] = [];
+          G.own[targetId].push({ slotId: emptySlot.id, owner: ai.id, type: chosenType });
+          
+          // 记录AI建造
+          logAction(ai.n, 'build', `在 ${toCity} 槽位${emptySlot.id + 1} 建造 ${indType.name} ${indType.icon}`);
+          showTurnNotice(`🤖 AI建造 ${indType.icon} 完成<br><span style="font-size:14px;opacity:0.9">⚡ 剩余: 0</span>`);
+        }
+      }
+      
+      // 记录AI结束回合
+      logAction(ai.n, 'endTurn', 'AI 结束回合');
+      
+      finishAiTurn();
+    }, 1000);
+  }, 1000);
+}
+
+function finishAiTurn() {
+  G.cp = 0;
+  G.ap = 1;
+  G.ph = 'action';
+  G.turn++;
+  
+  if (G.turn % 2 === 0) {
+    G.year += 1;
+  }
+  
+  // 检查年代事件
+  const decade = Math.floor(G.year / 10) * 10;
+  const events = DECADE_EVENTS[decade];
+  if (events && G.turn % 10 === 0) {
+    const event = events[Math.floor(Math.random() * events.length)];
+    if (event) {
+      showEventModal(event); // showEventModal 现在会处理所有效果
+    }
+  }
+  
+  clearHighlights();
+  document.getElementById('btn-move').textContent = '🚶 移动';
+  document.getElementById('btn-move').onclick = startMove;
+  
+  uUI();
+  showTurnNotice('你的回合');
+}
+
+// ==================== 城市信息 ====================
+function showCityPanel(city) {
+  const panel = document.getElementById('city-panel');
+  const nameEl = document.getElementById('city-name');
+  const contentEl = document.getElementById('city-content');
+  
+  const type = INDUSTRY_TYPES[city.best];
+  
+  // 生成槽位列表HTML
+  let slotsHTML = '<div id="city-slots" style="margin-top:16px;border-top:1px solid var(--border);padding-top:12px;">';
+  slotsHTML += '<h4 style="color:var(--text);font-size:14px;margin-bottom:10px;">🏗️ 开发槽位</h4>';
+  slotsHTML += '<div class="slot-list" style="display:flex;flex-direction:column;gap:8px;">';
+  
+  city.slots.forEach((slot, idx) => {
+    const canBuild = !slot.built && isMyTurnNow() && G.ap > 0 && G.ps[G.cp].pos === city.id;
+    const currentMoney = G.ps[G.cp] ? G.ps[G.cp].m : 0;
+    const canAfford = currentMoney >= slot.price;
+    
+    if (slot.built) {
+      // 已建造的槽位
+      const indType = INDUSTRY_TYPES[slot.type];
+      const owner = G.ps.find(p => p.id === slot.owner);
+      const ownerName = owner ? owner.n : '未知';
+      slotsHTML += `<div class="slot-item built" style="display:flex;align-items:center;justify-content:space-between;padding:10px 12px;background:rgba(39,174,96,0.08);border:1px solid rgba(39,174,96,0.3);border-radius:10px;">
+        <div>
+          <span style="font-weight:600;color:var(--text);">槽位${idx + 1}</span>
+          <span style="margin-left:8px;font-size:12px;">${indType ? indType.icon + ' ' + indType.name : '已建造'}</span>
+        </div>
+        <div style="text-align:right;">
+          <div style="font-size:11px;color:#666;">所有者: ${ownerName}</div>
+          <div style="font-size:10px;color:#27ae60;">收益 $${indType ? Math.floor(indType.bonus * (indType.cityBonus ? (indType.cityBonus[city.n] || 1.0) : 1.0)) : 100}/回合</div>
+        </div>
+      </div>`;
+    } else {
+      // 空槽位
+      const isClickable = canBuild && canAfford;
+      const clickHandler = isClickable ? `onclick="showBuildOptions(${city.id}, ${slot.id})"` : '';
+      const opacity = canBuild ? (canAfford ? '1' : '0.5') : '0.6';
+      slotsHTML += `<div class="slot-item empty" ${clickHandler} style="display:flex;align-items:center;justify-content:space-between;padding:10px 12px;background:var(--bg);border:1.5px solid ${isClickable ? 'var(--accent)' : 'var(--border)'};border-radius:10px;${isClickable ? 'cursor:pointer;' : ''}opacity:${opacity};${isClickable ? 'transition:all 0.2s;' : ''}">
+        <div>
+          <span style="font-weight:600;color:var(--text);">槽位${idx + 1}</span>
+          <span style="margin-left:8px;font-size:11px;color:#888;">空闲</span>
+        </div>
+        <div style="text-align:right;">
+          <div style="font-weight:700;color:var(--accent);">$${slot.price}</div>
+          ${!canAfford && canBuild ? '<div style="font-size:10px;color:#e74c3c;">资金不足</div>' : '<div style="font-size:10px;color:#27ae60;">可建造</div>'}
+        </div>
+      </div>`;
+    }
+  });
+  
+  slotsHTML += '</div></div>';
+  
+  // 计算城市当前收益
+  const cityRevenue = calculateCityRevenue(city);
+  const revenueText = cityRevenue > 0 ? `<span style="color:#27ae60;font-weight:600;">+$${cityRevenue}/回合</span>` : '<span style="color:#999;">无收益</span>';
+  
+  nameEl.innerHTML = city.n;
+  // 生成产业推荐HTML（显示事件修正后的效果）
+  let recHTML = '<div style="margin-top:8px;padding:8px;background:rgba(212,165,116,0.1);border-radius:8px;">';
+  recHTML += '<div style="font-size:11px;color:#666;margin-bottom:4px;">💡 产业推荐（含事件修正）：</div>';
+  Object.entries(INDUSTRY_TYPES).forEach(function(entry) {
+    const key = entry[0];
+    const ind = entry[1];
+    const baseBonus = ind.cityBonus ? (ind.cityBonus[city.n] || 1.0) : 1.0;
+    const eventMod = industryModifiers[city.n] ? (industryModifiers[city.n][key] || 0) : 0;
+    const finalBonus = baseBonus + eventMod;
+    const diff = Math.round((finalBonus - 1) * 100);
+    const modText = eventMod !== 0 ? ' (' + (eventMod > 0 ? '+' : '') + Math.round(eventMod * 100) + '%)' : '';
+    
+    if (diff > 0) {
+      recHTML += '<span style="color:#27ae60;font-size:10px;margin-right:4px;">+' + diff + '%' + ind.icon + modText + '</span>';
+    } else if (diff < 0) {
+      recHTML += '<span style="color:#e74c3c;font-size:10px;margin-right:4px;">' + diff + '%' + ind.icon + modText + '</span>';
+    } else {
+      recHTML += '<span style="color:#999;font-size:10px;margin-right:4px;">' + ind.icon + modText + '</span>';
+    }
+  });
+  recHTML += '</div>';
+  
+  contentEl.innerHTML = `
+    <div style="margin-bottom:10px;">
+      <span style="background:${'#' + type.color.toString(16).padStart(6, '0')};color:#fff;padding:4px 10px;border-radius:12px;font-size:12px;">${type.icon} ${type.name}</span>
+    </div>
+    <div style="margin-bottom:8px;"><strong>GDP：</strong>${city.gdp}万亿</div>
+    <div style="margin-bottom:8px;"><strong>人口：</strong>${city.pop}万</div>
+    <div style="margin-bottom:8px;"><strong>当前收益：</strong>${revenueText}</div>
+    <div style="color:#666;font-size:12px;margin-bottom:8px;">${city.desc}</div>
+    ${recHTML}
+    ${slotsHTML}
+  `;
+  panel.style.display = 'block';
+}
+
+// 计算城市总收益
+function calculateCityRevenue(city) {
+  let total = 0;
+  if (!city.slots) return 0;
+  
+  city.slots.forEach(slot => {
+    if (slot.built && slot.type) {
+      const indType = INDUSTRY_TYPES[slot.type];
+      if (indType) {
+        // 使用城市产业适配系数计算收益
+        const baseBonus = indType.cityBonus ? (indType.cityBonus[city.n] || 1.0) : 1.0;
+        // 加上事件修正
+        const eventMod = industryModifiers[city.n] ? (industryModifiers[city.n][slot.type] || 0) : 0;
+        const finalBonus = baseBonus + eventMod;
+        total += Math.floor(indType.bonus * Math.max(0.1, finalBonus));
+      }
+    }
+  });
+  
+  return total;
+}
+
+// 显示建造选项面板
+function showBuildOptions(cityId, slotId) {
+  const city = CITIES.find(c => c.id === cityId);
+  if (!city) return;
+  
+  const slot = city.slots[slotId];
+  if (!slot || slot.built) return;
+  
+  const currentPlayer = G.ps[G.cp];
+  if (!currentPlayer || currentPlayer.m < slot.price) {
+    alert('资金不足，需要$' + slot.price);
+    return;
+  }
+  
+  const mb = document.getElementById('mb');
+  document.getElementById('modal').classList.add('show');
+  
+  const type = INDUSTRY_TYPES[city.best];
+  
+  // 构建产业选项HTML（显示城市适配效果含事件修正）
+  let optionsHTML = '';
+  Object.entries(INDUSTRY_TYPES).forEach(function(entry) {
+    const key = entry[0];
+    const ind = entry[1];
+    const baseBonus = ind.cityBonus ? (ind.cityBonus[city.n] || 1.0) : 1.0;
+    const eventMod = industryModifiers[city.n] ? (industryModifiers[city.n][key] || 0) : 0;
+    const finalBonus = baseBonus + eventMod;
+    const diff = Math.round((finalBonus - 1) * 100);
+    const modText = eventMod !== 0 ? ' (' + (eventMod > 0 ? '+' : '') + Math.round(eventMod * 100) + '%)' : '';
+    let bonusText = '';
+    let bgColor = 'var(--bg)';
+    let borderClr = 'var(--border)';
+    if (diff > 0) {
+      bonusText = '<span style="color:#27ae60;font-size:10px;">推荐 +' + diff + '%' + modText + '</span>';
+      bgColor = 'rgba(39,174,96,0.1)';
+      borderClr = '#27ae60';
+    } else if (diff < 0) {
+      bonusText = '<span style="color:#e74c3c;font-size:10px;">不推荐 ' + diff + '%' + modText + '</span>';
+      bgColor = 'rgba(231,76,60,0.08)';
+      borderClr = '#e74c3c';
+    } else {
+      bonusText = '<span style="color:#999;font-size:10px;">适配' + modText + '</span>';
+    }
+    optionsHTML += '<div onclick="buildOnSlot(' + cityId + ', ' + slotId + ', \'' + key + '\')" style="display:flex;align-items:center;justify-content:space-between;padding:12px;background:' + bgColor + ';border:1.5px solid ' + borderClr + ';border-radius:10px;cursor:pointer;">' +
+      '<div><div style="font-weight:600;font-size:14px;">' + ind.icon + ' ' + ind.name + '</div>' +
+      '<div style="font-size:11px;color:#666;">基础收益 $' + ind.bonus + '/回合</div>' + bonusText + '</div>' +
+      '<div style="text-align:right;"><div style="font-weight:700;color:var(--accent);">$' + Math.floor(ind.bonus * Math.max(0.1, finalBonus)) + '</div></div></div>';
+  });
+  
+  mb.innerHTML = `<h2>🏗️ 建设工业 - ${city.n} 槽位${slotId + 1}</h2>
+    <p style="color:#666;font-size:12px;margin-bottom:8px;">建造费用: <strong style="color:var(--accent);">$${slot.price}</strong></p>
+    <p style="color:#666;font-size:11px;margin-bottom:12px;">💡 绿色=推荐(高收益)，红色=不推荐(低收益)</p>
+    <div style="display:flex;flex-direction:column;gap:8px;">${optionsHTML}</div>
+    <button onclick="document.getElementById('modal').classList.remove('show')" style="background:none;border:none;color:#999;font-size:13px;cursor:pointer;padding:12px;margin-top:8px;">取消</button>`;
+}
+
+// 在槽位上建造产业
+function buildOnSlot(cityId, slotId, industryType) {
+  if (!isMyTurnNow() || G.ap <= 0) {
+    alert('不是你的回合或行动点不足');
+    return;
+  }
+  
+  const city = CITIES.find(c => c.id === cityId);
+  if (!city) return;
+  
+  const slot = city.slots[slotId];
+  if (!slot || slot.built) {
+    alert('该槽位已被占用');
+    return;
+  }
+  
+  const currentPlayer = G.ps[G.cp];
+  if (currentPlayer.m < slot.price) {
+    alert('资金不足，需要$' + slot.price);
+    return;
+  }
+  
+  // 检查玩家是否在该城市
+  if (currentPlayer.pos !== cityId) {
+    alert('你不在该城市，无法建造');
+    return;
+  }
+  
+  // 执行建造
+  slot.built = true;
+  slot.type = industryType;
+  slot.owner = currentPlayer.id;
+  
+  currentPlayer.m -= slot.price;
+  G.ap--;
+  
+  // 添加3D模型
+  addIndustryMesh(cityId, currentPlayer.id);
+  
+  // 更新所有权记录
+  if (!G.own[cityId]) {
+    G.own[cityId] = [];
+  }
+  G.own[cityId].push({ slotId: slotId, owner: currentPlayer.id, type: industryType });
+  
+  uUI();
+  document.getElementById('modal').classList.remove('show');
+  document.getElementById('city-panel').style.display = 'none';  // 确保关闭城市面板
+  
+  const indType = INDUSTRY_TYPES[industryType];
+  showTurnNotice(`🏗️ ${city.n} ${indType.icon} ${indType.name} 建造成功！<br><span style="font-size:14px;opacity:0.9">⚡ 剩余行动点: ${G.ap}</span>`);
+  
+  // 记录建造操作
+  logAction(G.ps[G.cp].n, 'build', `在 ${city.n} 槽位${slotId + 1} 建造 ${indType.name} ${indType.icon}`);
+  
+  // 检查是否需要自动结束回合
+  checkAutoEndTurn();
+}
+
+// ==================== 通知系统 ====================
+function showTurnNotice(text) {
+  const el = document.getElementById('turn-notice');
+  const ap = G.ap || 0;
+  el.innerHTML = `${text}<br><span style="font-size:14px;opacity:0.9">⚡ 剩余行动点: ${ap}</span>`;
+  el.classList.remove('show');
+  void el.offsetWidth; // 触发重绘
+  el.classList.add('show');
+  setTimeout(() => el.classList.remove('show'), 2500);
+}
+
+function showNotice(text) {
+  const mb = document.getElementById('mb');
+  document.getElementById('modal').classList.add('show');
+  mb.innerHTML = `<h2>${text}</h2><p></p><button class="btn" onclick="document.getElementById('modal').classList.remove('show')" style="margin-top:12px">确定</button>`;
+}
+
+function showEventModal(event) {
+  // 应用即时资金效果
+  if (event.effect && event.effect.money) {
+    G.ps.forEach(p => { 
+      p.m += event.effect.money; 
+    });
+  }
+  
+  // 应用产业适配修正
+  if (event.industryEffect) {
+    Object.entries(event.industryEffect).forEach(function(cityName, mods) {
+      if (industryModifiers[cityName]) {
+        Object.entries(mods).forEach(function(entry) {
+          const industry = entry[0];
+          const value = entry[1];
+          industryModifiers[cityName][industry] = (industryModifiers[cityName][industry] || 0) + value;
+        });
+      }
+    });
+  }
+  
+  const good = event.good;
+  const color = good ? '#27ae60' : '#e74c3c';
+  const bgColor = good ? 'rgba(39, 174, 96, 0.1)' : 'rgba(231, 76, 60, 0.1)';
+  const label = good ? '【利好】' : '【危机】';
+  const eventIcon = event.icon || '📢';
+  
+  const mb = document.getElementById('mb');
+  document.getElementById('modal').classList.add('show');
+  
+  // 记录已触发的事件
+  const decade = Math.floor(G.year / 10) * 10;
+  const eventKey = decade + '-' + event.title;
+  if (!G.triggeredEvents) G.triggeredEvents = {};
+  G.triggeredEvents[eventKey] = true;
+  G.triggeredEvents[decade] = true;
+  
+  // 记录事件触发
+  logAction('系统', 'event', `${event.icon} ${event.title}`);
+  
+  // 构建弹窗内容
+  const html = `
+    <div style="text-align:center;padding:10px 0;">
+      <div style="font-size:48px;margin-bottom:10px;">${eventIcon}</div>
+      <h2 style="margin:0 0 10px 0;color:var(--text);">${event.title}</h2>
+      <div style="font-size:10px;color:${color};font-weight:600;margin-bottom:12px;">${label}</div>
+    </div>
+    
+    <p style="font-size:13px;color:#666;line-height:1.6;margin-bottom:15px;">${event.desc}</p>
+    
+    ${event.flavor ? `
+    <div style="background:${bgColor};border-radius:10px;padding:12px;margin-bottom:15px;border-left:4px solid ${color};">
+      <div style="font-size:11px;color:${color};font-weight:600;margin-bottom:4px;">📋 游戏效果</div>
+      <div style="font-size:13px;color:var(--text);font-weight:500;">${event.flavor}</div>
+    </div>
+    ` : ''}
+    
+    <div style="background:rgba(212,165,116,0.1);border-radius:10px;padding:12px;margin-bottom:15px;">
+      <div style="font-size:11px;color:#666;margin-bottom:4px;">🏙️ 影响城市</div>
+      <div style="font-size:12px;">${event.cities.join('、')}</div>
+    </div>
+    
+    ${event.effect && event.effect.money ? `
+    <div style="text-align:center;padding:10px;background:${event.effect.money > 0 ? 'rgba(39,174,96,0.1)' : 'rgba(231,76,60,0.1)'};border-radius:8px;margin-bottom:15px;">
+      <span style="font-size:24px;font-weight:bold;color:${color};">${event.effect.money > 0 ? '+' : ''}${event.effect.money}</span>
+      <div style="font-size:11px;color:#666;">即时资金变动</div>
+    </div>
+    ` : ''}
+    
+    <button onclick="document.getElementById('modal').classList.remove('show');updateTimeline();" 
+            style="width:100%;padding:12px;background:var(--accent);border:none;border-radius:10px;
+                   color:#fff;font-size:14px;font-weight:600;cursor:pointer;">
+      我知道了
+    </button>
+  `;
+  
+  mb.innerHTML = html;
+  uUI();
+}
+
+// ==================== 时间线系统 ====================
+function initTimeline() {
+  const tl = document.getElementById('timeline');
+  tl.style.display = 'flex';
+  const decades = [1990, 2000, 2010, 2020];
+  
+  let html = '';
+  decades.forEach(function(decade) {
+    const events = DECADE_EVENTS[decade] || [];
+    const isActive = G.year >= decade && G.year < decade + 10;
+    const isTriggered = G.triggeredEvents && G.triggeredEvents[decade];
+    html += '<div class="tl-year' + (isActive ? ' active' : '') + (isTriggered ? ' triggered' : '') + '" onclick="showTimelineEvents(' + decade + ')">' +
+      '<span class="y">' + decade + '</span>' +
+      '<span class="count">' + events.length + '事件</span>' +
+      '<span class="dot"></span></div>';
+  });
+  tl.innerHTML = html;
+}
+
+function showTimelineEvents(decade) {
+  const events = DECADE_EVENTS[decade] || [];
+  const panel = document.getElementById('tl-events');
+  
+  if (panel.classList.contains('show') && panel.dataset.decade == decade) {
+    panel.classList.remove('show');
+    return;
+  }
+  
+  panel.dataset.decade = decade;
+  
+  let html = '<h4>📅 ' + decade + '年代</h4>';
+  events.forEach(function(e) {
+    const triggered = G.triggeredEvents && G.triggeredEvents[decade + '-' + e.title];
+    const icon = triggered ? '✅' : (e.icon || (e.good ? '📈' : '📉'));
+    const cities = e.cities ? e.cities.join('、') : '全区';
+    html += '<div class="tl-event-item">' +
+      '<strong>' + icon + ' ' + e.title + '</strong><br>' +
+      '<span style="color:#666;">' + e.desc + '</span><br>' +
+      '<span style="color:var(--accent);font-size:10px;">📍 ' + cities + '</span>' +
+      (e.flavor ? '<br><span style="color:#27ae60;font-size:10px;">' + e.flavor.split('（')[0] + '</span>' : '') +
+      '</div>';
+  });
+  
+  panel.innerHTML = html;
+  panel.classList.add('show');
+}
+
+function updateTimeline() {
+  const decades = [1990, 2000, 2010, 2020];
+  document.querySelectorAll('.tl-year').forEach(function(el, idx) {
+    const decade = decades[idx];
+    el.classList.toggle('active', G.year >= decade && G.year < decade + 10);
+    el.classList.toggle('triggered', G.triggeredEvents && G.triggeredEvents[decade]);
+  });
+}
+
+// ==================== 聊天 ====================
+let chatOpen = false;
+
+function toggleChat() {
+  chatOpen = !chatOpen;
+  const chatBox = document.getElementById('chat-box');
+  chatBox.classList.toggle('show', chatOpen);
+  document.getElementById('chat-input-wrap').classList.toggle('show', chatOpen);
+  document.getElementById('chat-toggle').style.display = chatOpen ? 'none' : 'block';
+  
+  if (chatOpen) {
+    // 显示所有游戏操作记录
+    chatBox.innerHTML = '';
+    gameActions.forEach(a => {
+      const icon = getActionIcon(a.type);
+      const isPlayer = a.player === '玩家' || (G.ps[0] && a.player === G.ps[0].n);
+      const color = isPlayer ? '#d4a574' : '#7cb87c';
+      const html = `<div class="chat-msg">
+        <span style="color:#999;font-size:10px;">${a.time}</span>
+        <span style="color:${color};font-weight:600;margin:0 4px;">${a.player}</span>
+        <span>${icon} ${a.details}</span>
+      </div>`;
+      chatBox.insertAdjacentHTML('beforeend', html);
+    });
+    chatBox.scrollTop = chatBox.scrollHeight;
+    document.getElementById('chat-input').focus();
+  }
+}
+
+function sendChat() {
+  const input = document.getElementById('chat-input');
+  const msg = input.value.trim();
+  if (!msg) return;
+  
+  if (gameMode === 'multi' && socket) {
+    socket.emit('chat', { message: msg });
+  }
+  input.value = '';
+}
+
+function addChatMessage(sender, message) {
+  const box = document.getElementById('chat-box');
+  if (!chatOpen) toggleChat();
+  
+  const div = document.createElement('div');
+  div.className = 'chat-msg';
+  div.innerHTML = `<span class="sender">${sender}:</span> ${message}`;
+  box.appendChild(div);
+  box.scrollTop = box.scrollHeight;
+}
+
+// ========== 夜晚模式 ==========
+let isNightMode = false;
+
+function toggleNightMode() {
+  isNightMode = !isNightMode;
+  
+  const btn = document.getElementById('night-toggle');
+  
+  if (isNightMode) {
+    // 夜晚模式
+    scene.background = new THREE.Color(0x1a1a2e);
+    scene.fog = new THREE.Fog(0x1a1a2e, 200, 600);
+    
+    // 关闭主光源，开启月光
+    scene.children.forEach(child => {
+      if (child.isAmbientLight) {
+        child.intensity = 0.2;
+        child.color.setHex(0x4466AA);
+      }
+      if (child.isDirectionalLight) {
+        child.intensity = 0.3;
+        child.color.setHex(0x8899BB);
+      }
+    });
+    
+    btn.textContent = '☀️';
+    btn.style.background = '#FFB74D';
+  } else {
+    // 白天模式
+    scene.background = new THREE.Color(0x6BAED6);
+    scene.fog = null;
+    
+    // 恢复日光
+    scene.children.forEach(child => {
+      if (child.isAmbientLight) {
+        child.intensity = 0.6;
+        child.color.setHex(0xB4D7E8);
+      }
+      if (child.isDirectionalLight) {
+        child.intensity = 1.0;
+        child.color.setHex(0xFFFAF0);
+      }
+    });
+    
+    btn.textContent = '🌙';
+    btn.style.background = 'var(--card)';
+  }
+}
+
+// ========== 显示缩放提示 ==========
+function showZoomHint() {
+  const hint = document.getElementById('zoom-hint');
+  hint.style.display = 'block';
+  setTimeout(() => {
+    hint.style.display = 'none';
+  }, 3000);
+}
+
+// 首次进入游戏时显示提示
+setTimeout(showZoomHint, 1000);
+
+// ==================== 新手引导函数 ====================
+// 开始新手引导
+function startTutorial() {
+  currentTutorialStep = 0;
+  tutorialActive = true;
+  showTutorialStep();
+  document.getElementById('tutorial-overlay').style.display = 'flex';
+}
+
+// 显示当前引导步骤
+function showTutorialStep() {
+  const step = TUTORIAL_STEPS[currentTutorialStep];
+  
+  document.getElementById('tutorial-icon').textContent = step.icon;
+  document.getElementById('tutorial-title').textContent = step.title;
+  document.getElementById('tutorial-desc').textContent = step.desc;
+  
+  // 更新进度点
+  const progress = document.getElementById('tutorial-progress');
+  progress.innerHTML = TUTORIAL_STEPS.map((_, i) => 
+    `<div class="tutorial-dot ${i === currentTutorialStep ? 'active' : ''}"></div>`
+  ).join('');
+  
+  // 更新按钮文字
+  const nextBtn = document.getElementById('tutorial-next');
+  nextBtn.textContent = currentTutorialStep === TUTORIAL_STEPS.length - 1 ? '开始游戏' : '下一步';
+  
+  // 高亮元素
+  highlightElement(step.highlight);
+}
+
+// 下一步
+function nextTutorialStep() {
+  currentTutorialStep++;
+  if (currentTutorialStep >= TUTORIAL_STEPS.length) {
+    endTutorial();
+  } else {
+    showTutorialStep();
+  }
+}
+
+// 跳过引导
+function skipTutorial() {
+  endTutorial();
+}
+
+// 结束引导
+function endTutorial() {
+  tutorialActive = false;
+  document.getElementById('tutorial-overlay').style.display = 'none';
+  clearHighlight();
+  
+  // 保存已看过引导的状态
+  localStorage.setItem('tutorialSeen', 'true');
+}
+
+// 高亮元素
+function highlightElement(selector) {
+  clearHighlight();
+  if (selector) {
+    const el = document.querySelector(selector);
+    if (el) {
+      el.classList.add('tutorial-highlight');
+    }
+  }
+}
+
+// 清除高亮
+function clearHighlight() {
+  document.querySelectorAll('.tutorial-highlight').forEach(el => {
+    el.classList.remove('tutorial-highlight');
+  });
+}
+
+// 检查是否需要显示引导
+function checkTutorial() {
+  const seen = localStorage.getItem('tutorialSeen');
+  if (!seen) {
+    // 延迟显示，确保游戏界面已完全加载
+    setTimeout(() => {
+      startTutorial();
+    }, 500);
+  }
+}
+</script>
+</body>
+</html>

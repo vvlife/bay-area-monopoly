@@ -1,0 +1,1089 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1.0,maximum-scale=1.0,user-scalable=no">
+<title>⚔️ 粤港澳大冒险 V1.7 - Roguelike RPG</title>
+<style>
+:root{
+  --bg-dark:#1a1a2e;--bg-darker:#0f0f1a;--bg-card:#16213e;
+  --accent-gold:#d4a574;--accent-red:#e74c3c;--accent-green:#27ae60;
+  --accent-blue:#3498db;--accent-purple:#9b59b6;--accent-cyan:#00d4aa;
+  --text-light:#f5f0e8;--text-mid:#a09585;
+  --shadow:rgba(0,0,0,0.4);--shadow-glow:rgba(212,165,116,0.3);
+  --radius:12px;--radius-lg:16px;--radius-sm:8px;
+}
+*{margin:0;padding:0;box-sizing:border-box}
+html,body{height:100%;overflow:hidden;background:linear-gradient(160deg,var(--bg-dark),var(--bg-darker));color:var(--text-light);font-family:'PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif}
+#game{width:100vw;height:100vh;display:none;flex-direction:column}
+#lobby{width:100vw;height:100vh;display:flex;flex-direction:column;align-items:center;justify-content:center;background:linear-gradient(160deg,var(--bg-dark),var(--bg-darker));padding:20px}
+#lobby h1{font-size:clamp(28px,8vw,42px);color:var(--accent-gold);margin-bottom:4px;text-align:center;font-weight:700;text-shadow:0 0 30px rgba(212,165,116,0.4)}
+#lobby .sub{color:var(--text-mid);font-size:14px;margin-bottom:24px}
+.ver-badge{position:absolute;top:14px;right:14px;background:var(--bg-card);border:1px solid rgba(212,165,116,0.2);padding:6px 14px;border-radius:20px;font-size:11px;color:var(--text-mid)}
+.form{width:100%;max-width:300px;display:flex;flex-direction:column;gap:12px}
+.form input{padding:14px 18px;background:var(--bg-card);border:1.5px solid rgba(212,165,116,0.2);border-radius:var(--radius-sm);color:var(--text-light);font-size:15px;outline:none}
+.form input:focus{border-color:var(--accent-gold)}
+.btn{padding:14px 20px;background:linear-gradient(135deg,var(--accent-gold),#e8b872);border:none;border-radius:var(--radius);color:#1a1a2e;font-size:15px;font-weight:600;cursor:pointer}
+.btn:hover{transform:translateY(-1px)}
+.btn-primary{background:linear-gradient(135deg,var(--accent-gold),#e8b872);color:#1a1a2e}
+.btn-secondary{background:var(--bg-card);color:var(--text-light);border:1.5px solid rgba(212,165,116,0.3)}
+#top{background:var(--bg-card);padding:8px 14px;border-bottom:1px solid rgba(212,165,116,0.1);display:flex;align-items:center;justify-content:space-between;z-index:100}
+#top h1{color:var(--accent-gold);font-size:13px;font-weight:600}
+#top .st{display:flex;gap:6px;flex-wrap:wrap}
+.pcard{background:rgba(22,33,62,0.9);border:1.5px solid transparent;padding:4px 10px;border-radius:var(--radius-sm);font-size:10px;display:flex;align-items:center;gap:5px}
+.pcard.on{border-color:var(--accent-gold)}
+.pcard .hp{color:var(--accent-red);font-weight:700}
+.pcard .lv{color:var(--accent-cyan);font-weight:700}
+#mid{flex:1;position:relative;overflow:hidden}
+#scene{width:100%;height:100%}
+#bot{background:var(--bg-card);padding:10px 14px;border-top:1px solid rgba(212,165,116,0.1);z-index:100}
+#bot .rw{display:flex;align-items:center;justify-content:center;gap:10px;flex-wrap:wrap}
+.dice{width:46px;height:46px;background:linear-gradient(135deg,var(--accent-gold),#e8b872);border-radius:var(--radius-sm);display:flex;align-items:center;justify-content:center;font-size:22px;color:#1a1a2e}
+.dice.ani{animation:rollDice .6s ease}
+@keyframes rollDice{0%{transform:rotate(0) scale(1)}50%{transform:rotate(180deg) scale(1.1)}100%{transform:rotate(360deg) scale(1)}}
+.btn2{padding:12px 22px;border:none;border-radius:var(--radius-sm);font-size:13px;font-weight:600;cursor:pointer;min-height:44px}
+.btn2:disabled{opacity:.4;cursor:default}
+.b1{background:linear-gradient(135deg,var(--accent-gold),#e8b872);color:#1a1a2e}
+.b2{background:var(--accent-green);color:#fff}
+.b3{background:rgba(255,255,255,0.1);color:var(--text-mid);border:1px solid rgba(212,165,116,0.2)}
+.panel{background:var(--bg-card);border:1px solid rgba(212,165,116,0.15);border-radius:var(--radius-lg);transition:all .3s;opacity:0;transform:translateY(8px);pointer-events:none}
+.panel.show{opacity:1;transform:translateY(0);pointer-events:auto}
+.panel h3{color:var(--accent-gold);font-size:12px;font-weight:600;padding:10px 14px;border-bottom:1px solid rgba(212,165,116,0.1);display:flex;align-items:center;justify-content:space-between}
+#info{position:absolute;top:50px;right:10px;width:180px;display:none;z-index:100;max-height:60vh;overflow-y:auto}
+#info.show{display:block}
+.pi{padding:8px 10px;font-size:10px;border-bottom:1px solid rgba(212,165,116,0.1)}
+.pi .n{font-weight:600;color:var(--text-light)}
+.pi .stats{display:flex;gap:8px;flex-wrap:wrap}
+.pi .stat{color:var(--text-mid);font-size:9px}
+.pi .stat span{color:var(--accent-gold);font-weight:700}
+.panel-btn{position:absolute;z-index:50;background:var(--bg-card);border:1px solid rgba(212,165,116,0.2);border-radius:var(--radius-sm);padding:6px 12px;font-size:12px;cursor:pointer;color:var(--text-mid);min-height:44px;min-width:44px;display:flex;align-items:center;justify-content:center}
+.panel-btn:hover{border-color:var(--accent-gold);color:var(--accent-gold)}
+#ver-selector{position:absolute;top:50px;left:10px;z-index:50;background:var(--bg-card);border:1px solid rgba(212,165,116,0.2);border-radius:var(--radius);padding:8px 12px;font-size:11px;display:flex;align-items:center;gap:8px}
+#ver-selector label{color:var(--accent-gold);font-weight:600}
+#ver-selector select{background:var(--bg-card);color:var(--text-light);border:1.5px solid rgba(212,165,116,0.2);border-radius:8px;font-size:11px;padding:5px 10px;cursor:pointer;outline:none}
+#floor-display{position:absolute;top:50px;left:50%;transform:translateX(-50%);background:linear-gradient(135deg,rgba(212,165,116,0.15),rgba(155,89,182,0.1));border:1px solid rgba(212,165,116,0.2);border-radius:20px;padding:6px 18px;font-size:13px;color:var(--text-light);z-index:50;font-weight:600}
+#event-box{position:fixed;top:50%;left:50%;transform:translate(-50%,-50%) scale(0.9);background:var(--bg-card);border:1px solid rgba(212,165,116,0.2);border-radius:var(--radius-lg);padding:28px 32px;z-index:300;display:none;max-width:340px;width:90%;text-align:center;opacity:0;transition:all .35s}
+#event-box.show{display:block;opacity:1;transform:translate(-50%,-50%) scale(1)}
+#event-box h2{color:var(--accent-gold);font-size:18px;margin-bottom:10px;font-weight:700}
+#event-box p{color:var(--text-mid);font-size:14px;margin-bottom:18px;line-height:1.6}
+#battle-modal{position:fixed;inset:0;background:rgba(15,15,26,0.95);z-index:400;display:none;align-items:center;justify-content:center;opacity:0;transition:opacity .3s}
+#battle-modal.show{display:flex;opacity:1}
+#battle-content{background:var(--bg-card);border-radius:var(--radius-lg);padding:24px;max-width:400px;width:90%;max-height:90vh;overflow-y:auto;border:1px solid rgba(231,76,60,0.3)}
+#battle-content h2{color:var(--accent-red);font-size:18px;margin-bottom:16px;font-weight:700;text-align:center}
+.battle-arena{display:flex;justify-content:space-between;align-items:center;margin-bottom:20px;padding:16px;background:rgba(0,0,0,0.2);border-radius:var(--radius)}
+.battle-side{text-align:center}
+.battle-side .name{font-size:14px;font-weight:600;margin-bottom:8px}
+.battle-side .hp-bar{width:80px;height:8px;background:rgba(0,0,0,0.3);border-radius:4px;overflow:hidden;margin:0 auto 4px}
+.battle-side .hp-fill{height:100%;background:linear-gradient(90deg,var(--accent-red),#ff6b6b);transition:width .3s}
+.battle-side .hp-text{font-size:11px;color:var(--text-mid)}
+.battle-vs{font-size:24px;color:var(--accent-gold);font-weight:700}
+.battle-log{max-height:150px;overflow-y:auto;padding:12px;background:rgba(0,0,0,0.2);border-radius:var(--radius);margin-bottom:16px;font-size:12px;color:var(--text-mid);text-align:left}
+.battle-actions{display:flex;gap:8px;flex-wrap:wrap;justify-content:center}
+.battle-btn{padding:10px 20px;border:none;border-radius:var(--radius-sm);font-size:13px;font-weight:600;cursor:pointer;min-height:44px}
+.battle-btn.attack{background:linear-gradient(135deg,var(--accent-red),#ff6b6b);color:#fff}
+.battle-btn.defend{background:linear-gradient(135deg,var(--accent-blue),#5dade2);color:#fff}
+.battle-btn.item{background:linear-gradient(135deg,var(--accent-green),#58d68d);color:#fff}
+.battle-btn.flee{background:rgba(255,255,255,0.1);color:var(--text-mid);border:1px solid rgba(255,255,255,0.2)}
+#shop-modal{position:fixed;inset:0;background:rgba(15,15,26,0.95);z-index:400;display:none;align-items:center;justify-content:center;opacity:0;transition:opacity .3s}
+#shop-modal.show{display:flex;opacity:1}
+#shop-content{background:var(--bg-card);border-radius:var(--radius-lg);padding:24px;max-width:400px;width:90%;max-height:90vh;overflow-y:auto;border:1px solid rgba(212,165,116,0.3)}
+#shop-content h2{color:var(--accent-gold);font-size:18px;margin-bottom:16px;font-weight:700;text-align:center}
+.shop-gold{text-align:center;font-size:14px;color:var(--accent-gold);margin-bottom:16px;padding:8px;background:rgba(212,165,116,0.1);border-radius:var(--radius)}
+.shop-items{display:grid;gap:8px}
+.shop-item{display:flex;align-items:center;gap:12px;padding:12px;background:rgba(0,0,0,0.2);border-radius:var(--radius);cursor:pointer;transition:all .3s}
+.shop-item:hover{background:rgba(212,165,116,0.1)}
+.shop-item .icon{font-size:24px}
+.shop-item .info{flex:1}
+.shop-item .name{font-size:13px;font-weight:600;color:var(--text-light)}
+.shop-item .desc{font-size:11px;color:var(--text-mid)}
+.shop-item .price{color:var(--accent-gold);font-weight:700;font-size:13px}
+.shop-item.disabled{opacity:.4;cursor:not-allowed}
+#upgrade-modal{position:fixed;inset:0;background:rgba(15,15,26,0.95);z-index:400;display:none;align-items:center;justify-content:center;opacity:0;transition:opacity .3s}
+#upgrade-modal.show{display:flex;opacity:1}
+#upgrade-content{background:var(--bg-card);border-radius:var(--radius-lg);padding:28px;max-width:360px;width:90%;text-align:center;border:1px solid rgba(0,212,170,0.3)}
+#upgrade-content h2{color:var(--accent-cyan);font-size:20px;margin-bottom:8px;font-weight:700}
+#upgrade-content .level-up{font-size:48px;margin-bottom:16px}
+#upgrade-content p{color:var(--text-mid);font-size:14px;margin-bottom:20px}
+.upgrade-options{display:grid;gap:10px}
+.upgrade-btn{padding:14px 20px;background:rgba(0,0,0,0.3);border:1.5px solid rgba(212,165,116,0.2);border-radius:var(--radius);color:var(--text-light);cursor:pointer;transition:all .3s;text-align:left}
+.upgrade-btn:hover{border-color:var(--accent-cyan);background:rgba(0,212,170,0.1)}
+.upgrade-btn .title{font-weight:600;font-size:13px;display:block;margin-bottom:4px}
+.upgrade-btn .desc{font-size:11px;color:var(--text-mid)}
+#inventory{position:absolute;top:90px;right:10px;width:160px;display:none;z-index:100}
+#inventory.show{display:block}
+.inv-list{padding:8px;max-height:200px;overflow-y:auto}
+.inv-item{display:flex;align-items:center;gap:8px;padding:6px;background:rgba(0,0,0,0.2);border-radius:6px;margin-bottom:4px;font-size:11px;cursor:pointer}
+.inv-item:hover{background:rgba(212,165,116,0.1)}
+.inv-item .icon{font-size:16px}
+.inv-item .name{color:var(--text-light)}
+#node-info{position:absolute;bottom:70px;left:10px;background:var(--bg-card);border:1px solid rgba(212,165,116,0.2);border-radius:var(--radius);padding:10px 14px;font-size:11px;z-index:50;max-width:200px;display:none}
+#node-info.show{display:block}
+#node-info .type{color:var(--accent-gold);font-weight:600;margin-bottom:4px}
+#node-info .desc{color:var(--text-mid)}
+#loading{position:fixed;inset:0;background:linear-gradient(160deg,var(--bg-dark),var(--bg-darker));display:none;align-items:center;justify-content:center;z-index:999;flex-direction:column;gap:14px}
+#loading.show{display:flex}
+#loading .spinner{width:44px;height:44px;border:3px solid rgba(212,165,116,0.2);border-top-color:var(--accent-gold);border-radius:50%;animation:spin 1s ease-in-out infinite}
+@keyframes spin{to{transform:rotate(360deg)}}
+#loading .text{color:var(--text-mid);font-size:14px}
+#modal{position:fixed;inset:0;background:rgba(15,15,26,0.8);z-index:200;display:none;align-items:center;justify-content:center;opacity:0;transition:opacity .3s}
+#modal.show{display:flex;opacity:1}
+#mb{background:var(--bg-card);border-radius:var(--radius-lg);padding:24px 28px;max-width:320px;width:90%;text-align:center;border:1px solid rgba(212,165,116,0.2)}
+#mb h2{color:var(--accent-gold);font-size:16px;margin-bottom:8px;font-weight:700}
+#mb p{color:var(--text-mid);font-size:13px;margin-bottom:4px}
+.tst{position:fixed;top:60px;left:50%;transform:translateX(-50%);background:var(--bg-card)!important;color:var(--text-light)!important;padding:8px 18px!important;border-radius:20px!important;font-size:12px!important;z-index:500;animation:toastIn .35s ease,toastOut .35s ease 2.15s forwards!important}
+@keyframes toastIn{from{opacity:0;transform:translateX(-50%) translateY(-10px)}to{opacity:1;transform:translateX(-50%) translateY(0)}}
+@keyframes toastOut{from{opacity:1}to{opacity:0;transform:translateX(-50%) translateY(-10px)}}
+::-webkit-scrollbar{width:4px}
+::-webkit-scrollbar-thumb{background:rgba(212,165,116,0.3);border-radius:4px}
+</style>
+</head>
+<body>
+<div id="lobby">
+  <h1>⚔️ 粤港澳大冒险</h1>
+  <p class="sub">V1.7 · Roguelike RPG · 地城探险</p>
+  <div class="ver-badge">当前: V1.7</div>
+  <div class="form">
+    <input id="nm" placeholder="冒险者名字" value="">
+    <button class="btn btn-primary" id="sbtn">🗡️ 开始冒险</button>
+    <button class="btn btn-secondary" onclick="showHelp()">📖 游戏说明</button>
+  </div>
+</div>
+<div id="game">
+  <div id="top"><h1>⚔️ 大冒险 V1.7</h1><div class="st" id="st"></div></div>
+  <div id="mid">
+    <canvas id="scene"></canvas>
+    <div id="ver-selector"><label>版本:</label>
+      <select id="version" onchange="switchVersion(this.value)">
+        <option value="v1.0">V1.0</option><option value="v1.1">V1.1</option><option value="v1.2">V1.2</option>
+        <option value="v1.3">V1.3</option><option value="v1.4">V1.4</option><option value="v1.5">V1.5</option>
+        <option value="v1.6">V1.6</option><option value="v1.7" selected>V1.7 ⚔️</option>
+      </select>
+    </div>
+    <div id="floor-display">🏠 中心地城 - 第1层</div>
+    <button id="ibtn" class="panel-btn" onclick="toggleInfo()">📊</button>
+    <div id="info" class="panel"><h3>📊 冒险者状态</h3><div id="il"></div></div>
+    <button id="inv-btn" class="panel-btn" onclick="toggleInventory()" style="top:50px;right:50px">🎒</button>
+    <div id="inventory" class="panel"><h3>🎒 背包 <span onclick="toggleInventory()" style="cursor:pointer;color:var(--text-mid)">✕</span></h3><div class="inv-list" id="inv-list"></div></div>
+    <div id="node-info"><div class="type" id="node-type"></div><div class="desc" id="node-desc"></div></div>
+  </div>
+  <div id="bot">
+    <div class="rw">
+      <div class="dice" id="d1">🎲</div>
+      <button class="btn2 b1" id="br">🎲 移动</button>
+      <button class="btn2 b2" id="bb" style="display:none">⚔️ 战斗</button>
+      <button class="btn2 b3" id="bs" style="display:none">休息</button>
+    </div>
+  </div>
+</div>
+<div id="loading"><div class="spinner"></div><div class="text">生成地城...</div></div>
+<div id="modal"><div id="mb"></div></div>
+<div id="event-box"><h2 id="ev-title"></h2><p id="ev-desc"></p><button class="btn btn-primary" onclick="closeEvent()">确定</button></div>
+<div id="battle-modal">
+  <div id="battle-content">
+    <h2>⚔️ 战斗</h2>
+    <div class="battle-arena">
+      <div class="battle-side">
+        <div class="name" id="player-name">你</div>
+        <div class="hp-bar"><div class="hp-fill" id="player-hp-bar" style="width:100%"></div></div>
+        <div class="hp-text" id="player-hp-text">100/100</div>
+      </div>
+      <div class="battle-vs">VS</div>
+      <div class="battle-side">
+        <div class="name" id="enemy-name">敌人</div>
+        <div class="hp-bar"><div class="hp-fill" id="enemy-hp-bar" style="width:100%"></div></div>
+        <div class="hp-text" id="enemy-hp-text">??/??</div>
+      </div>
+    </div>
+    <div class="battle-log" id="battle-log"></div>
+    <div class="battle-actions">
+      <button class="battle-btn attack" onclick="battleAction('attack')">⚔️ 攻击</button>
+      <button class="battle-btn defend" onclick="battleAction('defend')">🛡️ 防御</button>
+      <button class="battle-btn item" onclick="battleAction('item')">🧪 道具</button>
+      <button class="battle-btn flee" onclick="battleAction('flee')">🏃 逃跑</button>
+    </div>
+  </div>
+</div>
+<div id="shop-modal">
+  <div id="shop-content">
+    <h2>🏪 神秘商人</h2>
+    <div class="shop-gold">💰 金币: <span id="shop-gold">0</span></div>
+    <div class="shop-items" id="shop-items"></div>
+    <button class="btn btn-secondary" onclick="closeShop()" style="margin-top:16px;width:100%">离开</button>
+  </div>
+</div>
+<div id="upgrade-modal">
+  <div id="upgrade-content">
+    <h2>🎉 升级!</h2>
+    <div class="level-up">⬆️</div>
+    <p>选择一项属性提升:</p>
+    <div class="upgrade-options">
+      <button class="upgrade-btn" onclick="chooseUpgrade('hp')"><span class="title">❤️ +10 生命值</span><span class="desc">提高生存能力</span></button>
+      <button class="upgrade-btn" onclick="chooseUpgrade('atk')"><span class="title">⚔️ +2 攻击力</span><span class="desc">造成更多伤害</span></button>
+      <button class="upgrade-btn" onclick="chooseUpgrade('def')"><span class="title">🛡️ +2 防御力</span><span class="desc">减少受到的伤害</span></button>
+    </div>
+  </div>
+</div>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+<script>
+// ==================== RPG Roguelike V1.7 ====================
+var scene, camera, renderer, mapGroup, playerMarker;
+var nodeMarkers = [], pathLines = [];
+var currentFloor = 1, currentNode = null;
+var isMyTurn = true, gameStarted = false;
+var battleEnemy = null, battleLog = [], isDefending = false;
+
+// 玩家状态
+var player = {
+  name: '', hp: 100, maxHp: 100, atk: 10, def: 5,
+  gold: 100, exp: 0, level: 1,
+  inventory: [{ id: 'hp_potion', count: 2 }],
+  equipment: { weapon: null, armor: null }
+};
+
+// 地图数据
+var mapData = { nodes: [], branches: {} };
+
+// 节点类型
+const NODE_TYPES = {
+  START: { icon: '🏠', name: '中心地城', color: 0xd4a574, desc: '安全区域' },
+  BATTLE: { icon: '⚔️', name: '战斗点', color: 0xe74c3c, desc: '遭遇敌人!' },
+  CHEST: { icon: '💰', name: '宝箱点', color: 0xf1c40f, desc: '获得奖励!' },
+  SHOP: { icon: '🔮', name: '商人点', color: 0x9b59b6, desc: '购买物品' },
+  CAMP: { icon: '🏕️', name: '营地点', color: 0x27ae60, desc: '恢复生命' },
+  EVENT: { icon: '❓', name: '事件点', color: 0x3498db, desc: '随机事件' },
+  PORTAL: { icon: '🌀', name: '传送点', color: 0x00d4aa, desc: '传送' },
+  BOSS: { icon: '👑', name: 'Boss点', color: 0xff0000, desc: '强大Boss!' },
+  TOWN: { icon: '🏘️', name: '城镇点', color: 0xe67e22, desc: '休息购买' }
+};
+
+// 敌人列表
+const ENEMIES = [
+  { name: '史莱姆', hp: 30, atk: 5, def: 2, exp: 20, gold: 15 },
+  { name: '哥布林', hp: 45, atk: 8, def: 3, exp: 35, gold: 25 },
+  { name: '骷髅兵', hp: 40, atk: 10, def: 1, exp: 40, gold: 30 },
+  { name: '蝙蝠', hp: 25, atk: 12, def: 0, exp: 25, gold: 20 },
+  { name: '野猪', hp: 55, atk: 9, def: 4, exp: 45, gold: 35 },
+  { name: '狼', hp: 50, atk: 11, def: 2, exp: 50, gold: 40 },
+  { name: '幽灵', hp: 35, atk: 14, def: 0, exp: 55, gold: 45 },
+  { name: '强盗', hp: 60, atk: 10, def: 5, exp: 60, gold: 50 }
+];
+
+// Boss列表
+const BOSSES = {
+  north: { name: '山岭之王', hp: 200, atk: 25, def: 15, exp: 300, gold: 500 },
+  east: { name: '森林守护者', hp: 180, atk: 28, def: 12, exp: 300, gold: 500 },
+  south: { name: '海妖', hp: 160, atk: 30, def: 10, exp: 300, gold: 500 },
+  west: { name: '黑暗骑士', hp: 220, atk: 22, def: 18, exp: 300, gold: 500 }
+};
+
+// 道具列表
+const ITEMS = {
+  hp_potion: { name: '生命药水', icon: '🧪', heal: 30, price: 20, desc: '恢复30HP' },
+  atk_potion: { name: '攻击药水', icon: '⚔️', atk: 5, price: 35, desc: '临时+5攻击' },
+  def_potion: { name: '防御药水', icon: '🛡️', def: 5, price: 35, desc: '临时+5防御' }
+};
+
+// 装备列表
+const EQUIPMENT = {
+  iron_sword: { name: '铁剑', icon: '🗡️', atk: 3, price: 50, type: 'weapon' },
+  steel_sword: { name: '钢剑', icon: '⚔️', atk: 6, price: 100, type: 'weapon' },
+  iron_armor: { name: '铁甲', icon: '🛡️', def: 3, price: 50, type: 'armor' },
+  steel_armor: { name: '钢甲', icon: '🛡️', def: 6, price: 100, type: 'armor' }
+};
+
+// 事件列表
+const EVENTS = [
+  { title: '发现宝藏!', desc: '你发现了一个隐藏的宝藏，获得50金币!', gold: 50, good: true },
+  { title: '陷阱!', desc: '你踩中了陷阱，失去20生命!', damage: 20, good: false },
+  { title: '神秘老人', desc: '神秘老人祝福了你，恢复30生命!', heal: 30, good: true },
+  { title: '强盗袭击', desc: '强盗抢走了你30金币!', gold: -30, good: false },
+  { title: '幸运星', desc: '幸运女神眷顾你，获得100经验!', exp: 100, good: true },
+  { title: '诅咒', desc: '你被诅咒了，攻击力下降2点!', atk: -2, good: false }
+];
+
+// 初始化
+document.getElementById('sbtn').onclick = startGame;
+
+function startGame() {
+  var name = document.getElementById('nm').value.trim() || '冒险者';
+  player.name = name;
+  showLoading();
+  setTimeout(function() {
+    hideLoading();
+    document.getElementById('lobby').style.display = 'none';
+    document.getElementById('game').style.display = 'flex';
+    initThree();
+    generateMap();
+    updateUI();
+    gameStarted = true;
+    showToast('欢迎，' + player.name + '！开始你的冒险吧！');
+  }, 1000);
+}
+
+function showLoading() { document.getElementById('loading').classList.add('show'); }
+function hideLoading() { document.getElementById('loading').classList.remove('show'); }
+
+// Three.js初始化
+function initThree() {
+  var cv = document.getElementById('scene');
+  scene = new THREE.Scene();
+  scene.background = new THREE.Color(0x0f0f1a);
+  scene.fog = new THREE.Fog(0x0f0f1a, 20, 50);
+  
+  camera = new THREE.PerspectiveCamera(60, cv.clientWidth / cv.clientHeight, 0.1, 100);
+  camera.position.set(0, 15, 15);
+  camera.lookAt(0, 0, 0);
+  
+  renderer = new THREE.WebGLRenderer({ canvas: cv, antialias: true });
+  renderer.setSize(cv.clientWidth, cv.clientHeight);
+  renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+  
+  // 灯光
+  var ambient = new THREE.AmbientLight(0x404040, 0.6);
+  scene.add(ambient);
+  var dir = new THREE.DirectionalLight(0xffffff, 0.8);
+  dir.position.set(5, 10, 5);
+  scene.add(dir);
+  var point = new THREE.PointLight(0xd4a574, 0.5, 30);
+  point.position.set(0, 5, 0);
+  scene.add(point);
+  
+  // 地图组
+  mapGroup = new THREE.Group();
+  scene.add(mapGroup);
+  
+  // 控制器
+  var isDragging = false, prevX = 0, prevY = 0;
+  cv.onmousedown = function(e) { isDragging = true; prevX = e.clientX; prevY = e.clientY; };
+  cv.onmouseup = function() { isDragging = false; };
+  cv.onmousemove = function(e) {
+    if (!isDragging) return;
+    var dx = e.clientX - prevX, dy = e.clientY - prevY;
+    camera.position.x -= dx * 0.05;
+    camera.position.z += dy * 0.05;
+    prevX = e.clientX; prevY = e.clientY;
+  };
+  cv.onwheel = function(e) {
+    var d = e.deltaY > 0 ? 1 : -1;
+    camera.position.y = Math.max(5, Math.min(25, camera.position.y + d));
+  };
+  
+  // 触摸
+  cv.ontouchstart = function(e) { if (e.touches.length === 1) { prevX = e.touches[0].clientX; prevY = e.touches[0].clientY; } };
+  cv.ontouchmove = function(e) {
+    if (e.touches.length === 1) {
+      var dx = e.touches[0].clientX - prevX, dy = e.touches[0].clientY - prevY;
+      camera.position.x -= dx * 0.05;
+      camera.position.z += dy * 0.05;
+      prevX = e.touches[0].clientX; prevY = e.touches[0].clientY;
+    }
+  };
+  
+  animate();
+}
+
+function animate() {
+  requestAnimationFrame(animate);
+  renderer.render(scene, camera);
+}
+
+// 生成地图
+function generateMap() {
+  mapGroup.clear();
+  nodeMarkers = [];
+  pathLines = [];
+  mapData.nodes = [];
+  mapData.branches = {};
+  
+  // 创建中心节点
+  var centerNode = {
+    id: 0, type: 'START', x: 0, z: 0,
+    branch: null, connections: [], visited: true
+  };
+  mapData.nodes.push(centerNode);
+  
+  // 创建4个分支
+  var branches = ['north', 'east', 'south', 'west'];
+  var branchAngles = [0, Math.PI/2, Math.PI, -Math.PI/2];
+  var branchNames = ['北境山脉', '魔法森林', '海岸港口', '城堡区'];
+  
+  for (var b = 0; b < 4; b++) {
+    var branch = branches[b];
+    var angle = branchAngles[b];
+    var nodes = [];
+    
+    // 每个分支5-7个节点
+    var nodeCount = 5 + Math.floor(Math.random() * 3);
+    var nodeTypes = ['BATTLE', 'CHEST', 'SHOP', 'CAMP', 'EVENT', 'BATTLE', 'TOWN'];
+    
+    for (var n = 0; n < nodeCount; n++) {
+      var dist = 3 + n * 2.5;
+      var jitter = (Math.random() - 0.5) * 1.5;
+      var nodeType = n === nodeCount - 1 ? 'BOSS' : nodeTypes[Math.floor(Math.random() * nodeTypes.length)];
+      
+      var node = {
+        id: mapData.nodes.length,
+        type: nodeType,
+        x: Math.sin(angle) * dist + jitter * Math.cos(angle),
+        z: Math.cos(angle) * dist + jitter * Math.sin(angle),
+        branch: branch,
+        connections: [],
+        visited: false
+      };
+      
+      nodes.push(node);
+      mapData.nodes.push(node);
+      
+      // 连接节点
+      if (n === 0) {
+        centerNode.connections.push(node.id);
+        node.connections.push(0);
+      } else {
+        nodes[n-1].connections.push(node.id);
+        node.connections.push(nodes[n-1].id);
+      }
+    }
+    
+    mapData.branches[branch] = nodes;
+  }
+  
+  // 渲染节点
+  for (var i = 0; i < mapData.nodes.length; i++) {
+    renderNode(mapData.nodes[i]);
+  }
+  
+  // 渲染路径
+  renderPaths();
+  
+  // 创建玩家标记
+  createPlayerMarker();
+  currentNode = centerNode;
+  updateNodeInfo();
+}
+
+function renderNode(node) {
+  var typeInfo = NODE_TYPES[node.type];
+  var group = new THREE.Group();
+  
+  // 节点底座
+  var baseGeo = new THREE.CylinderGeometry(0.6, 0.7, 0.3, 16);
+  var baseMat = new THREE.MeshLambertMaterial({ color: typeInfo.color, transparent: true, opacity: 0.8 });
+  var base = new THREE.Mesh(baseGeo, baseMat);
+  base.position.y = 0.15;
+  group.add(base);
+  
+  // 发光效果
+  var glowGeo = new THREE.SphereGeometry(0.5, 16, 16);
+  var glowMat = new THREE.MeshBasicMaterial({ color: typeInfo.color, transparent: true, opacity: 0.3 });
+  var glow = new THREE.Mesh(glowGeo, glowMat);
+  glow.position.y = 0.5;
+  group.add(glow);
+  
+  // Boss特效
+  if (node.type === 'BOSS') {
+    var ringGeo = new THREE.TorusGeometry(0.8, 0.05, 8, 32);
+    var ringMat = new THREE.MeshBasicMaterial({ color: 0xff0000, transparent: true, opacity: 0.6 });
+    var ring = new THREE.Mesh(ringGeo, ringMat);
+    ring.rotation.x = Math.PI / 2;
+    ring.position.y = 0.3;
+    group.add(ring);
+  }
+  
+  group.position.set(node.x, 0, node.z);
+  group.userData = node;
+  mapGroup.add(group);
+  nodeMarkers.push(group);
+}
+
+function renderPaths() {
+  var lineMat = new THREE.LineBasicMaterial({ color: 0x444466, transparent: true, opacity: 0.5 });
+  
+  for (var i = 0; i < mapData.nodes.length; i++) {
+    var node = mapData.nodes[i];
+    for (var j = 0; j < node.connections.length; j++) {
+      var targetId = node.connections[j];
+      if (targetId > node.id) {
+        var target = mapData.nodes[targetId];
+        var points = [
+          new THREE.Vector3(node.x, 0.1, node.z),
+          new THREE.Vector3(target.x, 0.1, target.z)
+        ];
+        var lineGeo = new THREE.BufferGeometry().setFromPoints(points);
+        var line = new THREE.Line(lineGeo, lineMat);
+        mapGroup.add(line);
+        pathLines.push(line);
+      }
+    }
+  }
+}
+
+function createPlayerMarker() {
+  var group = new THREE.Group();
+  
+  // 身体
+  var bodyGeo = new THREE.CapsuleGeometry(0.2, 0.4, 8, 16);
+  var bodyMat = new THREE.MeshLambertMaterial({ color: 0x00d4aa });
+  var body = new THREE.Mesh(bodyGeo, bodyMat);
+  body.position.y = 0.6;
+  group.add(body);
+  
+  // 头
+  var headGeo = new THREE.SphereGeometry(0.15, 16, 16);
+  var headMat = new THREE.MeshLambertMaterial({ color: 0xffdbac });
+  var head = new THREE.Mesh(headGeo, headMat);
+  head.position.y = 1.1;
+  group.add(head);
+  
+  // 光环
+  var haloGeo = new THREE.TorusGeometry(0.3, 0.02, 8, 32);
+  var haloMat = new THREE.MeshBasicMaterial({ color: 0x00d4aa, transparent: true, opacity: 0.5 });
+  var halo = new THREE.Mesh(haloGeo, haloMat);
+  halo.rotation.x = Math.PI / 2;
+  halo.position.y = 1.3;
+  group.add(halo);
+  
+  playerMarker = group;
+  mapGroup.add(group);
+  
+  // 初始位置
+  if (currentNode) {
+    playerMarker.position.set(currentNode.x, 0, currentNode.z);
+  }
+}
+
+// 掷骰子移动
+document.getElementById('br').onclick = rollAndMove;
+
+function rollAndMove() {
+  if (!isMyTurn || !currentNode) return;
+  document.getElementById('br').disabled = true;
+  
+  // 掷骰子动画
+  var d1 = document.getElementById('d1');
+  d1.classList.add('ani');
+  setTimeout(function() { d1.classList.remove('ani'); }, 600);
+  
+  // 随机步数
+  var steps = Math.floor(Math.random() * 6) + 1;
+  d1.textContent = steps;
+  
+  setTimeout(function() {
+    movePlayer(steps);
+  }, 700);
+}
+
+function movePlayer(steps) {
+  // 获取可移动的节点
+  var available = getAvailableNodes(currentNode, steps);
+  if (available.length === 0) {
+    showToast('无法移动！');
+    document.getElementById('br').disabled = false;
+    return;
+  }
+  
+  // 随机选择一个
+  var target = available[Math.floor(Math.random() * available.length)];
+  
+  // 移动动画
+  animateMove(currentNode, target, function() {
+    currentNode = target;
+    currentNode.visited = true;
+    updateNodeInfo();
+    
+    // 触发节点事件
+    triggerNodeEvent(target);
+  });
+}
+
+function getAvailableNodes(start, maxSteps) {
+  var result = [];
+  var visited = {};
+  visited[start.id] = true;
+  
+  function dfs(node, steps) {
+    if (steps === 0) return;
+    for (var i = 0; i < node.connections.length; i++) {
+      var nextId = node.connections[i];
+      if (!visited[nextId]) {
+        visited[nextId] = true;
+        var next = mapData.nodes[nextId];
+        result.push(next);
+        dfs(next, steps - 1);
+      }
+    }
+  }
+  
+  dfs(start, maxSteps);
+  return result;
+}
+
+function animateMove(from, to, callback) {
+  var duration = 500;
+  var startTime = Date.now();
+  var startX = from.x, startZ = from.z;
+  var endX = to.x, endZ = to.z;
+  
+  function update() {
+    var elapsed = Date.now() - startTime;
+    var progress = Math.min(elapsed / duration, 1);
+    var eased = 1 - Math.pow(1 - progress, 3);
+    
+    playerMarker.position.x = startX + (endX - startX) * eased;
+    playerMarker.position.z = startZ + (endZ - startZ) * eased;
+    playerMarker.position.y = Math.sin(progress * Math.PI) * 0.5;
+    
+    if (progress < 1) {
+      requestAnimationFrame(update);
+    } else {
+      playerMarker.position.y = 0;
+      callback();
+    }
+  }
+  
+  update();
+}
+
+// 触发节点事件
+function triggerNodeEvent(node) {
+  switch (node.type) {
+    case 'BATTLE':
+      startBattle();
+      break;
+    case 'CHEST':
+      openChest();
+      break;
+    case 'SHOP':
+      openShop();
+      break;
+    case 'CAMP':
+      restAtCamp();
+      break;
+    case 'EVENT':
+      triggerRandomEvent();
+      break;
+    case 'BOSS':
+      startBossBattle(node.branch);
+      break;
+    case 'TOWN':
+      visitTown();
+      break;
+    case 'PORTAL':
+      usePortal();
+      break;
+    case 'START':
+      showEvent('中心地城', '你回到了中心地城，可以安全休息。');
+      player.hp = Math.min(player.hp + 20, player.maxHp);
+      updateUI();
+      document.getElementById('br').disabled = false;
+      break;
+    default:
+      document.getElementById('br').disabled = false;
+  }
+}
+
+// 战斗系统
+function startBattle() {
+  var enemy = Object.assign({}, ENEMIES[Math.floor(Math.random() * ENEMIES.length)]);
+  enemy.maxHp = enemy.hp;
+  battleEnemy = enemy;
+  battleLog = [];
+  isDefending = false;
+  
+  showBattleModal();
+  updateBattleUI();
+  addBattleLog('遭遇了 ' + enemy.name + '!');
+}
+
+function startBossBattle(branch) {
+  var boss = Object.assign({}, BOSSES[branch]);
+  boss.maxHp = boss.hp;
+  battleEnemy = boss;
+  battleLog = [];
+  isDefending = false;
+  
+  showBattleModal();
+  updateBattleUI();
+  addBattleLog('Boss战开始! ' + boss.name + ' 出现了!');
+}
+
+function showBattleModal() {
+  document.getElementById('battle-modal').classList.add('show');
+  document.getElementById('player-name').textContent = player.name;
+}
+
+function updateBattleUI() {
+  var phpPercent = (player.hp / player.maxHp) * 100;
+  document.getElementById('player-hp-bar').style.width = phpPercent + '%';
+  document.getElementById('player-hp-text').textContent = player.hp + '/' + player.maxHp;
+  
+  if (battleEnemy) {
+    var ehpPercent = (battleEnemy.hp / battleEnemy.maxHp) * 100;
+    document.getElementById('enemy-name').textContent = battleEnemy.name;
+    document.getElementById('enemy-hp-bar').style.width = ehpPercent + '%';
+    document.getElementById('enemy-hp-text').textContent = battleEnemy.hp + '/' + battleEnemy.maxHp;
+  }
+  
+  var logEl = document.getElementById('battle-log');
+  logEl.innerHTML = battleLog.map(function(l) { return '<div class="log-entry">' + l + '</div>'; }).join('');
+  logEl.scrollTop = logEl.scrollHeight;
+}
+
+function addBattleLog(text) {
+  battleLog.push(text);
+  updateBattleUI();
+}
+
+function battleAction(action) {
+  if (!battleEnemy) return;
+  
+  switch (action) {
+    case 'attack':
+      var damage = Math.max(1, player.atk - battleEnemy.def + Math.floor(Math.random() * 5));
+      battleEnemy.hp -= damage;
+      addBattleLog('你造成了 ' + damage + ' 点伤害!');
+      isDefending = false;
+      break;
+    case 'defend':
+      isDefending = true;
+      addBattleLog('你进入防御姿态!');
+      break;
+    case 'item':
+      var potion = player.inventory.find(function(i) { return i.id === 'hp_potion'; });
+      if (potion && potion.count > 0) {
+        potion.count--;
+        player.hp = Math.min(player.hp + 30, player.maxHp);
+        addBattleLog('使用生命药水，恢复30HP!');
+        updateBattleUI();
+      } else {
+        addBattleLog('没有可用的道具!');
+        return;
+      }
+      break;
+    case 'flee':
+      if (Math.random() < 0.5) {
+        addBattleLog('逃跑成功!');
+        setTimeout(endBattle, 500);
+        return;
+      } else {
+        addBattleLog('逃跑失败!');
+      }
+      break;
+  }
+  
+  // 检查敌人是否死亡
+  if (battleEnemy.hp <= 0) {
+    addBattleLog(battleEnemy.name + ' 被击败!');
+    player.gold += battleEnemy.gold;
+    player.exp += battleEnemy.exp;
+    addBattleLog('获得 ' + battleEnemy.gold + ' 金币, ' + battleEnemy.exp + ' 经验!');
+    
+    // 检查升级
+    checkLevelUp();
+    
+    setTimeout(endBattle, 1000);
+    return;
+  }
+  
+  // 敌人回合
+  setTimeout(enemyTurn, 500);
+}
+
+function enemyTurn() {
+  if (!battleEnemy || battleEnemy.hp <= 0) return;
+  
+  var damage = Math.max(1, battleEnemy.atk - player.def + Math.floor(Math.random() * 3));
+  if (isDefending) damage = Math.floor(damage * 0.5);
+  player.hp -= damage;
+  addBattleLog(battleEnemy.name + ' 造成了 ' + damage + ' 点伤害!');
+  
+  // 检查玩家死亡
+  if (player.hp <= 0) {
+    player.hp = 0;
+    addBattleLog('你被击败了...');
+    setTimeout(playerDeath, 1000);
+    return;
+  }
+  
+  updateBattleUI();
+  isDefending = false;
+}
+
+function endBattle() {
+  document.getElementById('battle-modal').classList.remove('show');
+  battleEnemy = null;
+  updateUI();
+  document.getElementById('br').disabled = false;
+}
+
+function playerDeath() {
+  document.getElementById('battle-modal').classList.remove('show');
+  
+  // 死亡惩罚
+  player.hp = player.maxHp;
+  player.gold = Math.floor(player.gold * 0.5);
+  player.inventory = [{ id: 'hp_potion', count: 1 }];
+  
+  // 回到中心
+  currentNode = mapData.nodes[0];
+  playerMarker.position.set(0, 0, 0);
+  
+  showToast('你死亡了！失去一半金币，回到中心地城。');
+  updateUI();
+  document.getElementById('br').disabled = false;
+}
+
+// 升级系统
+function checkLevelUp() {
+  var expNeeded = player.level * 100;
+  while (player.exp >= expNeeded) {
+    player.exp -= expNeeded;
+    player.level++;
+    expNeeded = player.level * 100;
+    showUpgradeModal();
+  }
+}
+
+function showUpgradeModal() {
+  document.getElementById('upgrade-modal').classList.add('show');
+}
+
+function chooseUpgrade(type) {
+  switch (type) {
+    case 'hp':
+      player.maxHp += 10;
+      player.hp += 10;
+      break;
+    case 'atk':
+      player.atk += 2;
+      break;
+    case 'def':
+      player.def += 2;
+      break;
+  }
+  document.getElementById('upgrade-modal').classList.remove('show');
+  showToast('升级成功! 现在是 Lv.' + player.level);
+  updateUI();
+}
+
+// 宝箱
+function openChest() {
+  var gold = 20 + Math.floor(Math.random() * 50);
+  var exp = 10 + Math.floor(Math.random() * 30);
+  player.gold += gold;
+  player.exp += exp;
+  
+  showEvent('发现宝箱!', '获得 ' + gold + ' 金币和 ' + exp + ' 经验!');
+  checkLevelUp();
+  updateUI();
+  document.getElementById('br').disabled = false;
+}
+
+// 商店
+function openShop() {
+  document.getElementById('shop-gold').textContent = player.gold;
+  
+  var items = [
+    { id: 'hp_potion', icon: '🧪', name: '生命药水', desc: '恢复30HP', price: 20 },
+    { id: 'atk_potion', icon: '⚔️', name: '攻击药水', desc: '临时+5攻击', price: 35 },
+    { id: 'def_potion', icon: '🛡️', name: '防御药水', desc: '临时+5防御', price: 35 },
+    { id: 'iron_sword', icon: '🗡️', name: '铁剑', desc: '+3攻击', price: 50 },
+    { id: 'steel_sword', icon: '⚔️', name: '钢剑', desc: '+6攻击', price: 100 },
+    { id: 'iron_armor', icon: '🛡️', name: '铁甲', desc: '+3防御', price: 50 }
+  ];
+  
+  var html = items.map(function(item) {
+    var disabled = player.gold < item.price ? 'disabled' : '';
+    return '<div class="shop-item ' + disabled + '" onclick="buyItem(\'' + item.id + '\',' + item.price + ')">' +
+      '<div class="icon">' + item.icon + '</div>' +
+      '<div class="info"><div class="name">' + item.name + '</div><div class="desc">' + item.desc + '</div></div>' +
+      '<div class="price">' + item.price + '💰</div></div>';
+  }).join('');
+  
+  document.getElementById('shop-items').innerHTML = html;
+  document.getElementById('shop-modal').classList.add('show');
+}
+
+function buyItem(id, price) {
+  if (player.gold < price) return;
+  player.gold -= price;
+  
+  // 添加到背包
+  var existing = player.inventory.find(function(i) { return i.id === id; });
+  if (existing) {
+    existing.count++;
+  } else {
+    player.inventory.push({ id: id, count: 1 });
+  }
+  
+  // 装备效果
+  if (id === 'iron_sword') player.atk += 3;
+  if (id === 'steel_sword') player.atk += 6;
+  if (id === 'iron_armor') player.def += 3;
+  
+  showToast('购买成功!');
+  document.getElementById('shop-gold').textContent = player.gold;
+  updateUI();
+}
+
+function closeShop() {
+  document.getElementById('shop-modal').classList.remove('show');
+  document.getElementById('br').disabled = false;
+}
+
+// 营地休息
+function restAtCamp() {
+  var heal = 30 + Math.floor(Math.random() * 20);
+  player.hp = Math.min(player.hp + heal, player.maxHp);
+  showEvent('营地休息', '恢复了 ' + heal + ' 点生命!');
+  updateUI();
+  document.getElementById('br').disabled = false;
+}
+
+// 随机事件
+function triggerRandomEvent() {
+  var evt = EVENTS[Math.floor(Math.random() * EVENTS.length)];
+  
+  if (evt.gold) player.gold = Math.max(0, player.gold + evt.gold);
+  if (evt.damage) player.hp = Math.max(0, player.hp - evt.damage);
+  if (evt.heal) player.hp = Math.min(player.maxHp, player.hp + evt.heal);
+  if (evt.exp) player.exp += evt.exp;
+  if (evt.atk) player.atk = Math.max(1, player.atk + evt.atk);
+  
+  showEvent(evt.title, evt.desc);
+  checkLevelUp();
+  updateUI();
+  document.getElementById('br').disabled = false;
+}
+
+// 城镇
+function visitTown() {
+  player.hp = Math.min(player.hp + 20, player.maxHp);
+  showEvent('城镇', '在城镇休息，恢复20生命。可以在这里购买物品。');
+  updateUI();
+  setTimeout(openShop, 500);
+}
+
+// 传送门
+function usePortal() {
+  var branches = Object.keys(mapData.branches);
+  var randomBranch = branches[Math.floor(Math.random() * branches.length)];
+  var branchNodes = mapData.branches[randomBranch];
+  if (branchNodes && branchNodes.length > 0) {
+    var targetNode = branchNodes[Math.floor(Math.random() * branchNodes.length)];
+    currentNode = targetNode;
+    playerMarker.position.set(targetNode.x, 0, targetNode.z);
+    showEvent('传送!', '被传送到了 ' + randomBranch + ' 区域!');
+    updateNodeInfo();
+  }
+  document.getElementById('br').disabled = false;
+}
+
+// UI更新
+function updateUI() {
+  // 顶部状态栏
+  var st = document.getElementById('st');
+  st.innerHTML = '<div class="pcard on">' +
+    '<div class="avatar">👤</div>' +
+    '<span>' + player.name + '</span>' +
+    '<span class="hp">❤️' + player.hp + '</span>' +
+    '<span class="lv">Lv.' + player.level + '</span>' +
+    '</div>';
+  
+  // 信息面板
+  var il = document.getElementById('il');
+  il.innerHTML = '<div class="pi">' +
+    '<div class="n">' + player.name + ' Lv.' + player.level + '</div>' +
+    '<div class="stats">' +
+    '<span class="stat">❤️ <span>' + player.hp + '/' + player.maxHp + '</span></span>' +
+    '<span class="stat">⚔️ <span>' + player.atk + '</span></span>' +
+    '<span class="stat">🛡️ <span>' + player.def + '</span></span>' +
+    '<span class="stat">💰 <span>' + player.gold + '</span></span>' +
+    '<span class="stat">⭐ <span>' + player.exp + '/' + (player.level * 100) + '</span></span>' +
+    '</div></div>';
+  
+  // 背包
+  var invList = document.getElementById('inv-list');
+  invList.innerHTML = player.inventory.map(function(item) {
+    var info = ITEMS[item.id] || EQUIPMENT[item.id] || { name: item.id, icon: '📦' };
+    return '<div class="inv-item"><span class="icon">' + info.icon + '</span><span class="name">' + info.name + ' x' + item.count + '</span></div>';
+  }).join('');
+  
+  // 楼层显示
+  var floorText = currentNode ? NODE_TYPES[currentNode.type].name : '中心地城';
+  document.getElementById('floor-display').textContent = floorText + ' - 第' + currentFloor + '层';
+}
+
+function updateNodeInfo() {
+  if (!currentNode) return;
+  var typeInfo = NODE_TYPES[currentNode.type];
+  document.getElementById('node-type').textContent = typeInfo.icon + ' ' + typeInfo.name;
+  document.getElementById('node-desc').textContent = typeInfo.desc;
+  document.getElementById('node-info').classList.add('show');
+}
+
+// 面板切换
+function toggleInfo() {
+  document.getElementById('info').classList.toggle('show');
+}
+
+function toggleInventory() {
+  document.getElementById('inventory').classList.toggle('show');
+}
+
+// 事件弹窗
+function showEvent(title, desc) {
+  document.getElementById('ev-title').textContent = title;
+  document.getElementById('ev-desc').textContent = desc;
+  document.getElementById('event-box').classList.add('show');
+}
+
+function closeEvent() {
+  document.getElementById('event-box').classList.remove('show');
+}
+
+// Toast提示
+function showToast(text) {
+  var old = document.querySelector('.tst');
+  if (old) old.remove();
+  var div = document.createElement('div');
+  div.className = 'tst';
+  div.textContent = text;
+  document.body.appendChild(div);
+  setTimeout(function() { div.remove(); }, 2500);
+}
+
+// 帮助
+function showHelp() {
+  showModal('⚔️ 粤港澳大冒险 V1.7', 
+    'Roguelike RPG地城探险游戏\n\n' +
+    '🎮 操作：掷骰子移动到相邻节点\n' +
+    '⚔️ 战斗：攻击/防御/使用道具/逃跑\n' +
+    '📈 升级：获得经验升级，选择属性提升\n' +
+    '🎒 道具：在商店购买或宝箱获得\n' +
+    '💀 死亡：失去一半金币，回到起点\n\n' +
+    '目标：击败4个Boss，探索地城！');
+}
+
+function showModal(title, content) {
+  document.getElementById('mb').innerHTML = '<h2>' + title + '</h2><p>' + content.replace(/\n/g, '</p><p>') + '</p>';
+  document.getElementById('modal').classList.add('show');
+  setTimeout(function() { document.getElementById('modal').classList.remove('show'); }, 5000);
+}
+
+// 版本切换
+function switchVersion(ver) {
+  if (ver === 'v1.7') return;
+  window.location.href = ver + '.html';
+}
+
+// 窗口调整
+window.onresize = function() {
+  if (!renderer) return;
+  var cv = document.getElementById('scene');
+  camera.aspect = cv.clientWidth / cv.clientHeight;
+  camera.updateProjectionMatrix();
+  renderer.setSize(cv.clientWidth, cv.clientHeight);
+};
+</script>
+</body>
+</html>

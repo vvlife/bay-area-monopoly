@@ -1,0 +1,756 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1.0,maximum-scale=1.0,user-scalable=no">
+<title>🎲 粤港澳大富翁 3D V1.3</title>
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+html,body{height:100%;overflow:hidden;background:#0a0a12;color:#fff;font-family:-apple-system,sans-serif}
+#game{width:100vw;height:100vh;display:none;flex-direction:column}
+#lobby{width:100vw;height:100vh;display:flex;flex-direction:column;align-items:center;justify-content:center;background:linear-gradient(135deg,#1a1a2e,#0f3460);padding:20px}
+#lobby h1{font-size:clamp(24px,7vw,36px);color:#ffd700;margin-bottom:8px;text-align:center}
+#lobby p{color:#888;font-size:13px;margin-bottom:20px}
+.ver{position:absolute;top:10px;right:10px;background:rgba(0,0,0,.5);padding:6px 10px;border-radius:6px;font-size:10px;color:#aaa}
+.form{width:100%;max-width:280px;display:flex;flex-direction:column;gap:10px}
+.form input{padding:14px;background:#1a1a2e;border:1px solid #333;border-radius:10px;color:#fff;font-size:16px}
+.btn{padding:14px;background:linear-gradient(135deg,#ffd700,#ff9800);border:none;border-radius:10px;color:#000;font-size:16px;font-weight:700;cursor:pointer}
+.btn:disabled{opacity:.5}
+
+#top{background:rgba(26,26,46,.95);padding:8px 12px;border-bottom:1px solid rgba(255,215,0,.3);display:flex;align-items:center;justify-content:space-between;z-index:100}
+#top h1{color:#ffd700;font-size:12px}
+#top .st{display:flex;gap:6px;flex-wrap:wrap}
+.pcard{background:rgba(0,0,0,.5);padding:4px 8px;border-radius:6px;font-size:10px;border:2px solid transparent;display:flex;align-items:center;gap:4px}
+.pcard.on{border-color:#ffd700;box-shadow:0 0 8px rgba(255,215,0,.4)}
+.pcard .avatar{width:20px;height:20px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:12px}
+.pcard .m{color:#ffd700;font-weight:700}
+
+#mid{flex:1;position:relative;overflow:hidden}
+#scene{width:100%;height:100%}
+
+#bot{background:rgba(26,26,46,.95);padding:10px 12px;border-top:1px solid rgba(255,215,0,.3);z-index:100}
+#bot .rw{display:flex;align-items:center;justify-content:center;gap:8px;flex-wrap:wrap}
+.dice{width:40px;height:40px;background:#fff;border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:20px}
+.dice.ani{animation:r .5s}
+@keyframes r{0%{transform:rotate(0)}50%{transform:rotate(180deg) scale(1.1)}100%{transform:rotate(360deg)}}
+.btn2{padding:10px 18px;border:none;border-radius:8px;font-size:13px;font-weight:700;cursor:pointer}
+.btn2:disabled{opacity:.4}
+.b1{background:linear-gradient(135deg,#ffd700,#ff9800);color:#000}
+.b2{background:#4CAF50;color:#fff}
+.b3{background:#555;color:#fff}
+
+#info{position:absolute;top:50px;right:8px;background:rgba(26,26,46,.95);border:1px solid rgba(255,215,0,.3);border-radius:8px;width:150px;display:none;z-index:100;max-height:60vh;overflow-y:auto}
+#info.show{display:block}
+#info h3{color:#ffd700;font-size:10px;padding:6px 8px;border-bottom:1px solid rgba(255,255,255,.1)}
+.pi{padding:6px 8px;font-size:9px;border-bottom:1px solid rgba(255,255,255,.05);display:flex;align-items:center;gap:6px}
+.pi .avatar{width:16px;height:16px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:10px}
+.pi .n{font-weight:700}
+.pi .m{color:#ffd700}
+
+#ibtn{position:absolute;top:50px;right:8px;z-index:50;background:rgba(26,26,46,.9);border:1px solid rgba(255,215,0,.5);border-radius:8px;width:36px;height:36px;font-size:18px;cursor:pointer}
+
+/* V1.3: 优化版本选择器 */
+#ver-selector{position:absolute;top:50px;left:8px;z-index:50;background:rgba(26,26,46,.95);border:1px solid rgba(255,215,0,.5);border-radius:8px;padding:8px 10px;font-size:11px;display:flex;align-items:center;gap:6px}
+#ver-selector label{color:#ffd700;font-weight:600}
+#ver-selector select{background:linear-gradient(135deg,#2a2a4e,#1a1a3e);color:#fff;border:1px solid rgba(255,215,0,.3);border-radius:6px;font-size:11px;padding:4px 8px;cursor:pointer}
+
+/* V1.3: 年份显示优化 */
+#year-display{position:absolute;top:50px;left:50%;transform:translateX(-50%);background:linear-gradient(135deg,rgba(255,215,0,.2),rgba(255,152,0,.2));border:1px solid rgba(255,215,0,.5);border-radius:20px;padding:6px 16px;font-size:13px;color:#ffd700;z-index:50;font-weight:600;box-shadow:0 2px 10px rgba(255,215,0,.2)}
+
+/* V1.3: 优化事件弹窗 */
+#event-box{position:fixed;top:50%;left:50%;transform:translate(-50%,-50%);background:linear-gradient(145deg,#1a1a2e,#0f2847);border:2px solid #ffd700;border-radius:16px;padding:24px 32px;z-index:300;display:none;max-width:340px;width:90%;text-align:center;box-shadow:0 10px 40px rgba(0,0,0,.5),0 0 30px rgba(255,215,0,.1)}
+#event-box.show{display:block;animation:popIn .3s ease}
+@keyframes popIn{from{opacity:0;transform:translate(-50%,-50%) scale(0.8)}to{opacity:1;transform:translate(-50%,-50%) scale(1)}}
+#event-box h2{color:#ffd700;font-size:18px;margin-bottom:10px}
+#event-box p{color:#ccc;font-size:14px;margin-bottom:16px;line-height:1.5}
+#event-box .btn{width:100%;padding:12px;font-size:14px}
+
+#turn-tip{position:fixed;top:55px;left:50%;transform:translateX(-50%);background:linear-gradient(135deg,#ffd700,#ff9800);color:#000;padding:8px 20px;border-radius:20px;font-size:13px;font-weight:700;z-index:250;display:none;box-shadow:0 4px 15px rgba(255,215,0,.4)}
+#turn-tip.show{display:block;animation:slideIn .3s ease}
+@keyframes slideIn{from{opacity:0;transform:translateX(-50%) translateY(-20px)}to{opacity:1;transform:translateX(-50%) translateY(0)}}
+
+#event-history{position:absolute;top:90px;left:8px;background:rgba(26,26,46,.95);border:1px solid rgba(255,215,0,.3);border-radius:8px;width:180px;max-height:200px;display:none;z-index:100;overflow:hidden}
+#event-history.show{display:block}
+#event-history h3{color:#ffd700;font-size:10px;padding:6px 8px;border-bottom:1px solid rgba(255,255,255,.1);display:flex;align-items:center;justify-content:space-between}
+#event-history .list{padding:4px;max-height:160px;overflow-y:auto;font-size:9px}
+#event-history .item{padding:4px 6px;border-bottom:1px solid rgba(255,255,255,.05);color:#ccc}
+#event-history .item .year{color:#ffd700;font-weight:700}
+#event-history .item .type-traffic{color:#00BFFF}
+#event-history .item .type-market{color:#4CAF50}
+#event-history .item .type-policy{color:#FF5722}
+#event-history .item .type-global{color:#9C27B0}
+#ehbtn{position:absolute;top:50px;left:50px;z-index:50;background:rgba(26,26,46,.9);border:1px solid rgba(255,215,0,.5);border-radius:8px;padding:4px 8px;font-size:10px;cursor:pointer}
+
+#global-effects{position:absolute;bottom:70px;left:8px;background:rgba(26,26,46,.9);border:1px solid rgba(255,215,0,.3);border-radius:8px;padding:6px 10px;font-size:10px;z-index:50;max-width:200px;display:none}
+#global-effects.show{display:block}
+#global-effects h4{color:#ffd700;font-size:9px;margin-bottom:4px}
+#global-effects .effect{color:#ccc;padding:2px 0;font-size:9px}
+#global-effects .effect.active{color:#4CAF50}
+
+#room-list{background:rgba(26,26,46,.9);border-radius:8px;padding:8px;margin-top:10px;max-width:280px;width:100%;display:none}
+#room-list.show{display:block}
+#room-list h3{color:#ffd700;font-size:12px;margin-bottom:6px}
+#room-list .room{background:rgba(0,0,0,.3);padding:8px;border-radius:6px;margin-bottom:4px;cursor:pointer;border:1px solid transparent}
+#room-list .room:hover{border-color:#ffd700}
+
+/* V1.3: 聊天面板 */
+#chat-panel{position:absolute;bottom:60px;left:8px;background:rgba(26,26,46,.95);border:1px solid rgba(255,215,0,.3);border-radius:10px;width:220px;max-height:250px;display:none;z-index:100;flex-direction:column}
+#chat-panel.show{display:flex}
+#chat-panel h3{color:#ffd700;font-size:10px;padding:8px 10px;border-bottom:1px solid rgba(255,255,255,.1);display:flex;align-items:center;justify-content:space-between}
+#chat-panel .msgs{flex:1;max-height:160px;overflow-y:auto;padding:8px;font-size:10px}
+#chat-panel .msg{padding:4px 6px;margin-bottom:4px;border-radius:4px;background:rgba(0,0,0,.3)}
+#chat-panel .msg .sender{color:#ffd700;font-weight:700}
+#chat-panel .msg .text{color:#ccc}
+#chat-panel .input-area{display:flex;gap:4px;padding:8px;border-top:1px solid rgba(255,255,255,.1)}
+#chat-panel .input-area input{flex:1;background:rgba(0,0,0,.5);border:1px solid rgba(255,215,0,.3);border-radius:6px;padding:6px 8px;color:#fff;font-size:11px}
+#chat-panel .input-area input:focus{outline:none;border-color:#ffd700}
+#chat-panel .input-area button{background:#ffd700;border:none;border-radius:6px;padding:6px 10px;font-size:12px;cursor:pointer}
+#chat-btn{position:absolute;bottom:60px;left:8px;z-index:50;background:rgba(26,26,46,.9);border:1px solid rgba(255,215,0,.5);border-radius:8px;padding:6px 10px;font-size:10px;cursor:pointer}
+
+/* V1.3: 排行榜 */
+#rank-panel{position:absolute;top:90px;right:8px;background:rgba(26,26,46,.95);border:1px solid rgba(255,215,0,.3);border-radius:10px;width:160px;display:none;z-index:100}
+#rank-panel.show{display:block}
+#rank-panel h3{color:#ffd700;font-size:10px;padding:8px 10px;border-bottom:1px solid rgba(255,255,255,.1);display:flex;align-items:center;justify-content:space-between}
+#rank-panel .rank-list{padding:8px;font-size:10px}
+#rank-panel .rank-item{display:flex;align-items:center;gap:6px;padding:6px;border-radius:6px;margin-bottom:4px;background:rgba(0,0,0,.3)}
+#rank-panel .rank-item.top1{background:linear-gradient(135deg,rgba(255,215,0,.3),rgba(255,152,0,.2));border:1px solid rgba(255,215,0,.5)}
+#rank-panel .rank-item .num{font-weight:700;font-size:12px;width:16px}
+#rank-panel .rank-item.top1 .num{color:#ffd700}
+#rank-panel .rank-item .name{flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+#rank-panel .rank-item .money{color:#4CAF50;font-weight:700}
+#rank-btn{position:absolute;top:50px;right:50px;z-index:50;background:rgba(26,26,46,.9);border:1px solid rgba(255,215,0,.5);border-radius:8px;padding:4px 8px;font-size:10px;cursor:pointer}
+
+/* 加载指示器 */
+#loading{position:fixed;inset:0;background:rgba(0,0,0,.8);display:none;align-items:center;justify-content:center;z-index:999;flex-direction:column;gap:10px}
+#loading.show{display:flex}
+#loading .spinner{width:40px;height:40px;border:3px solid rgba(255,215,0,.3);border-top-color:#ffd700;border-radius:50%;animation:spin 1s linear infinite}
+@keyframes spin{to{transform:rotate(360deg)}}
+#loading .text{color:#ffd700;font-size:14px}
+
+@media (max-width:480px){
+  #event-history{width:150px;max-height:150px}
+  #chat-panel{width:180px;max-height:200px}
+  #rank-panel{width:140px}
+}
+</style>
+</head>
+<body>
+
+<div id="lobby">
+  <h1>🎲 粤港澳大富翁 3D</h1>
+  <p>V1.3 · 3D模型 · 聊天 · 排行榜</p>
+  <div class="ver">当前: V1.3</div>
+  <div class="form">
+    <input id="nm" placeholder="你的名字" value="">
+    <input id="room" placeholder="房间号（默认 room1）" value="room1">
+    <button class="btn" id="sbtn">🎮 单机模式</button>
+    <button class="btn" id="mbtn" style="background:#2196F3;color:#fff;margin-top:6px">🌐 多人联机</button>
+  </div>
+  <div id="room-list"></div>
+</div>
+
+<div id="game">
+  <div id="top">
+    <h1>🎲 大富翁 3D V1.3</h1>
+    <div class="st" id="st"></div>
+  </div>
+  <div id="mid">
+    <canvas id="scene"></canvas>
+    <div id="ver-selector">
+      <label>版本:</label>
+      <select id="version" onchange="switchVersion(this.value)">
+        <option value="v1.0">V1.0</option>
+        <option value="v1.1">V1.1</option>
+        <option value="v1.2">V1.2</option>
+        <option value="v1.3" selected>V1.3 ✨</option>
+      </select>
+    </div>
+    <div id="year-display">📅 2025年</div>
+    <button id="ehbtn" onclick="toggleEventHistory()">📜 事件</button>
+    <div id="event-history">
+      <h3>📜 事件历史 <span id="eh-count">0</span></h3>
+      <div class="list" id="eh-list"></div>
+    </div>
+    <button id="ibtn">📊</button>
+    <div id="info">
+      <h3>📊 玩家状态</h3>
+      <div id="il"></div>
+    </div>
+    <button id="rank-btn" onclick="toggleRank()">🏆 排行</button>
+    <div id="rank-panel">
+      <h3>🏆 财富排行 <span onclick="toggleRank()" style="cursor:pointer">✕</span></h3>
+      <div class="rank-list" id="rank-list"></div>
+    </div>
+    <button id="chat-btn" onclick="toggleChat()">💬 聊天</button>
+    <div id="chat-panel">
+      <h3>💬 聊天 <span onclick="toggleChat()" style="cursor:pointer">✕</span></h3>
+      <div class="msgs" id="chat-msgs"></div>
+      <div class="input-area">
+        <input type="text" id="chat-input" placeholder="说点什么..." maxlength="100">
+        <button onclick="sendChat()">发送</button>
+      </div>
+    </div>
+    <div id="global-effects">
+      <h4>🌍 全局效果</h4>
+      <div id="ge-list"></div>
+    </div>
+  </div>
+  <div id="bot">
+    <div class="rw">
+      <div class="dice" id="d1">🎲</div>
+      <div class="dice" id="d2">🎲</div>
+      <button class="btn2 b1" id="br">🎲 掷骰子</button>
+      <button class="btn2 b2" id="bb" style="display:none">💰 购买</button>
+      <button class="btn2 b3" id="bs" style="display:none">跳过</button>
+    </div>
+  </div>
+</div>
+
+<div id="loading"><div class="spinner"></div><div class="text">加载模型中...</div></div>
+<div id="modal"><div id="mb"></div></div>
+<div id="event-box"><h2 id="ev-title"></h2><p id="ev-desc"></p><button class="btn" onclick="closeEvent()">确定</button></div>
+<div id="turn-tip"><span id="tt-text"></span></div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/loaders/GLTFLoader.js"></script>
+<script>
+// V1.3: 3D模型、聊天、排行榜、UI优化
+
+const D=['⚀','⚁','⚂','⚃','⚄','⚅'];
+const C={hk:0xC41E3A,sz:0x00BFFF,gz:0xFF8C00,zm:0x9400D3,start:0xFFD700,jail:0x555,chance:0x6B3FA0,tax:0x8B0000};
+const PLAYER_COLORS=[0xf44336,0x2196F3,0x4CAF50,0xFFEB3B];
+const PLAYER_AVATARS=['🔴','🔵','🟢','🟡'];
+
+// V1.3: GLB模型路径
+const MODEL_BASE='../genshin-3d-models/viewer/models/';
+const PLAYER_MODELS=['anime_girl.glb','robot.glb','astronaut.glb','xbot.glb'];
+
+const EVENTS={
+  chance:[
+    {n:'银行股息',eff:G=>{G.ps[G.cp].m+=500;return'获得 $500';}},
+    {n:'超速罚款',eff:G=>{G.ps[G.cp].m-=200;return'罚款 $200';}},
+    {n:'前进起点',eff:G=>{G.ps[G.cp].pos=0;G.ps[G.cp].m+=2000;return'前进到起点，获得 $2000';}},
+    {n:'彩票中奖',eff:G=>{G.ps[G.cp].m+=1000;return'获得 $1000';}},
+    {n:'医疗费用',eff:G=>{G.ps[G.cp].m-=800;return'支付 $800';}},
+    {n:'生日红包',eff:G=>{G.ps[G.cp].m+=300;return'获得 $300';}},
+  ],
+  fate:[
+    {n:'入狱通知',eff:G=>{G.ps[G.cp].pos=10;G.ps[G.cp].jail=true;return'进入监狱！';}},
+    {n:'慈善捐款',eff:G=>{G.ps[G.cp].m-=500;return'捐款 $500';}},
+    {n:'投资回报',eff:G=>{G.ps[G.cp].m+=1500;return'获得 $1500';}},
+    {n:'维修费用',eff:G=>{G.ps[G.cp].m-=400;return'支付 $400';}},
+  ]
+};
+
+const TIMELINE_EVENTS=[
+  {year:2026,type:'traffic',name:'港珠澳大桥扩建',desc:'移动速度+1',effect:{moveBonus:1},duration:3},
+  {year:2027,type:'traffic',name:'深中通道通车',desc:'交通格额外$200',effect:{stationBonus:200},duration:4},
+  {year:2028,type:'traffic',name:'磁悬浮开通',desc:'骰子最小值+1',effect:{minDice:2},duration:3},
+  {year:2030,type:'traffic',name:'智能交通网',desc:'每回合额外移动1格',effect:{extraMove:1},duration:5},
+  {year:2026,type:'market',name:'科技boom',desc:'深圳租金+30%',effect:{rentBonus:{sz:1.3}},duration:4},
+  {year:2027,type:'market',name:'旅游旺季',desc:'港澳租金+25%',effect:{rentBonus:{hk:1.25,zm:1.25}},duration:3},
+  {year:2028,type:'market',name:'金融中心',desc:'香港租金+50%',effect:{rentBonus:{hk:1.5}},duration:2},
+  {year:2029,type:'market',name:'地产泡沫',desc:'所有租金-20%',effect:{rentBonus:{global:0.8}},duration:3},
+  {year:2031,type:'market',name:'绿色经济',desc:'广州租金+40%',effect:{rentBonus:{gz:1.4}},duration:4},
+  {year:2026,type:'policy',name:'限购令',desc:'购房成本+20%',effect:{buyCost:1.2},duration:3},
+  {year:2027,type:'policy',name:'税收优惠',desc:'税收减少50%',effect:{taxReduce:0.5},duration:3},
+  {year:2028,type:'policy',name:'环保税',desc:'新增$300税',effect:{extraTax:300},duration:4},
+  {year:2029,type:'policy',name:'人才政策',desc:'起点+$500',effect:{startBonus:500},duration:5},
+  {year:2030,type:'policy',name:'金融监管',desc:'银行股息失效',effect:{disableChance:['银行股息']},duration:3},
+  {year:2027,type:'global',name:'双倍租金',desc:'租金翻倍',effect:{rentMultiplier:2},duration:2},
+  {year:2028,type:'global',name:'通货膨胀',desc:'金额+20%',effect:{inflation:0.2},duration:4},
+  {year:2029,type:'global',name:'经济衰退',desc:'金额-30%',effect:{inflation:-0.3},duration:3},
+  {year:2030,type:'global',name:'幸运年',desc:'事件效果翻倍',effect:{eventMultiplier:2},duration:2},
+  {year:2031,type:'global',name:'大富翁时代',desc:'起点奖励翻倍',effect:{startBonus:2000},duration:5},
+];
+
+const T=[
+  {id:0,type:'start',n:'起点'},{id:1,type:'p',n:'维多利亚港',p:600,r:30,g:'hk',c:'香港'},{id:2,type:'c',n:'机会'},{id:3,type:'p',n:'太平山顶',p:600,r:30,g:'hk',c:'香港'},{id:4,type:'tax',n:'所得税',tx:2000},{id:5,type:'s',n:'港珠澳大桥',p:2000,r:250},{id:6,type:'p',n:'中环IFC',p:1000,r:50,g:'hk',c:'香港'},{id:7,type:'f',n:'命运'},{id:8,type:'p',n:'铜锣湾',p:1000,r:50,g:'hk',c:'香港'},{id:9,type:'p',n:'兰桂坊',p:1200,r:60,g:'hk',c:'香港'},
+  {id:10,type:'jail',n:'监狱'},{id:11,type:'p',n:'深圳湾',p:1400,r:70,g:'sz',c:'深圳'},{id:12,type:'p',n:'平安金融',p:1400,r:70,g:'sz',c:'深圳'},{id:13,type:'p',n:'华强北',p:1600,r:80,g:'sz',c:'深圳'},{id:14,type:'s',n:'深圳地铁',p:2000,r:250},{id:15,type:'p',n:'世界之窗',p:1800,r:90,g:'sz',c:'深圳'},{id:16,type:'c',n:'机会'},{id:17,type:'p',n:'深圳北站',p:1800,r:90,g:'sz',c:'深圳'},{id:18,type:'p',n:'东门老街',p:2000,r:100,g:'sz',c:'深圳'},{id:19,type:'free',n:'免费停车'},
+  {id:20,type:'p',n:'广州塔',p:2200,r:110,g:'gz',c:'广州'},{id:21,type:'f',n:'命运'},{id:22,type:'p',n:'珠江新城',p:2200,r:110,g:'gz',c:'广州'},{id:23,type:'p',n:'白云山',p:2400,r:120,g:'gz',c:'广州'},{id:24,type:'s',n:'白云机场',p:2000,r:250},{id:25,type:'p',n:'琶洲会展',p:2600,r:130,g:'gz',c:'广州'},{id:26,type:'p',n:'北京路',p:2600,r:130,g:'gz',c:'广州'},{id:27,type:'p',n:'上下九',p:2800,r:140,g:'gz',c:'广州'},{id:28,type:'tax',n:'奢侈税',tx:3000},{id:29,type:'go',n:'入狱'},
+  {id:30,type:'p',n:'珠海渔女',p:3000,r:150,g:'zm',c:'珠海'},{id:31,type:'p',n:'横琴新区',p:3000,r:150,g:'zm',c:'珠海'},{id:32,type:'c',n:'机会'},{id:33,type:'p',n:'大三巴',p:3200,r:160,g:'zm',c:'澳门'},{id:34,type:'s',n:'澳门轻轨',p:2000,r:250},{id:35,type:'f',n:'命运'},{id:36,type:'p',n:'威尼斯人',p:3500,r:175,g:'zm',c:'澳门'},{id:37,type:'p',n:'港珠澳口岸',p:4000,r:200,g:'zm',c:'珠海'},{id:38,type:'tax',n:'超级税',tx:5000},{id:39,type:'p',n:'澳门塔',p:5000,r:250,g:'zm',c:'澳门'}
+];
+
+let G={ps:[],cp:0,ph:'roll',pr:{},year:2025,turn:0};
+let scn,cam,ren,ts=[],tks=[];
+const BS=16,TSZ=1.5;
+let gltfLoader,playerModels=[],modelsLoaded=false;
+let chatMessages=[];
+let ws,myId,online=false,roomId='';
+let activeEffects=[],triggeredEvents=new Set(),eventHistory=[];
+const TYPE_ICONS={traffic:'🚗',market:'📈',policy:'📋',global:'🌍'};
+
+document.getElementById('sbtn').onclick=startSingle;
+document.getElementById('mbtn').onclick=startMulti;
+document.getElementById('ibtn').onclick=()=>document.getElementById('info').classList.toggle('show');
+document.getElementById('br').onclick=roll;
+document.getElementById('bb').onclick=buy;
+document.getElementById('bs').onclick=skip;
+document.getElementById('chat-input').onkeydown=e=>{if(e.key==='Enter')sendChat();};
+
+function switchVersion(v){
+  if(v==='v1.0')location.href='v1.0.html';
+  else if(v==='v1.1')location.href='v1.1.html';
+  else if(v==='v1.2')location.href='v1.2.html';
+}
+
+function toggleEventHistory(){document.getElementById('event-history').classList.toggle('show');}
+
+function toggleChat(){
+  const panel=document.getElementById('chat-panel');
+  const btn=document.getElementById('chat-btn');
+  panel.classList.toggle('show');
+  btn.style.display=panel.classList.contains('show')?'none':'block';
+}
+
+function toggleRank(){document.getElementById('rank-panel').classList.toggle('show');}
+
+// V1.3: 发送聊天消息
+function sendChat(){
+  const input=document.getElementById('chat-input');
+  const text=input.value.trim();
+  if(!text)return;
+  input.value='';
+  addChatMessage(G.ps[G.cp].n,text);
+  if(online)ws.send(JSON.stringify({type:'chat',player:G.ps[G.cp].n,text:text}));
+}
+
+function addChatMessage(sender,text){
+  chatMessages.push({sender,text,time:Date.now()});
+  if(chatMessages.length>50)chatMessages.shift();
+  renderChat();
+}
+
+function renderChat(){
+  document.getElementById('chat-msgs').innerHTML=chatMessages.slice(-20).map(m=>
+    `<div class="msg"><span class="sender">${m.sender}:</span> <span class="text">${m.text}</span></div>`
+  ).join('');
+  const msgs=document.getElementById('chat-msgs');
+  msgs.scrollTop=msgs.scrollHeight;
+}
+
+// V1.3: 更新排行榜
+function updateRank(){
+  const sorted=[...G.ps].sort((a,b)=>b.m-a.m);
+  document.getElementById('rank-list').innerHTML=sorted.map((p,i)=>
+    `<div class="rank-item${i===0?' top1':''}"><span class="num">${i+1}</span><span class="name">${p.n}</span><span class="money">$${p.m.toLocaleString()}</span></div>`
+  ).join('');
+}
+
+function startSingle(){
+  const n=document.getElementById('nm').value.trim()||'玩家';
+  G={ps:[
+    {id:'p1',n:n,m:15000,pos:0,pr:[],jail:false,avatar:PLAYER_AVATARS[0],color:PLAYER_COLORS[0]},
+    {id:'p2',n:'电脑1',m:15000,pos:0,pr:[],jail:false,avatar:PLAYER_AVATARS[1],color:PLAYER_COLORS[1]},
+    {id:'p3',n:'电脑2',m:15000,pos:0,pr:[],jail:false,avatar:PLAYER_AVATARS[2],color:PLAYER_COLORS[2]}
+  ],cp:0,ph:'roll',pr:{},year:2025,turn:0};
+  activeEffects=[];triggeredEvents=new Set();eventHistory=[];chatMessages=[];
+  document.getElementById('lobby').style.display='none';
+  document.getElementById('game').style.display='flex';
+  showLoading();
+  init3D();
+}
+
+function startMulti(){
+  const n=document.getElementById('nm').value.trim()||'玩家';
+  roomId=document.getElementById('room').value.trim()||'room1';
+  connectWebSocket(n,roomId);
+}
+
+function connectWebSocket(name,room){
+  const host=location.host;
+  const proto=location.protocol==='https:'?'wss:':'ws:';
+  document.getElementById('lobby').innerHTML='<p>连接中...</p>';
+  try{
+    ws=new WebSocket(proto+'//'+host);
+    ws.onopen=()=>ws.send(JSON.stringify({type:'join',name:name,roomId:room}));
+    ws.onmessage=e=>handleServerMessage(JSON.parse(e.data));
+    ws.onerror=()=>{toast('❌ 连接失败');setTimeout(()=>connectWebSocket(name,room),3000);};
+    ws.onclose=()=>{if(online){toast('⚠️ 断开连接');setTimeout(()=>connectWebSocket(name,room),3000);}};
+  }catch(e){toast('❌ '+e.message);}
+}
+
+function handleServerMessage(m){
+  if(m.type==='joined'){myId=m.playerId;online=true;toast('✅ 已加入房间 '+roomId);}
+  else if(m.type==='state'){
+    G=m;G.ps=G.players;G.cp=G.currentPlayer;
+    activeEffects=m.activeEffects||[];eventHistory=m.eventHistory||[];
+    triggeredEvents=new Set(m.triggeredEvents||[]);
+    document.getElementById('lobby').style.display='none';
+    document.getElementById('game').style.display='flex';
+    if(!scn)init3D();
+    uUI();updateGlobalEffects();updateEventHistory();updateYearDisplay();updateRank();
+  }
+  else if(m.type==='event'){showEvent(m.event.title,m.event.desc);if(m.event.history){eventHistory=m.event.history;updateEventHistory();}}
+  else if(m.type==='chat'){addChatMessage(m.player,m.text);}
+  else if(m.type==='turn'){showTurnTip(m.playerName);}
+  else if(m.type==='year'){G.year=m.year;updateYearDisplay();checkTimelineEvents();}
+  else if(m.type==='effect'){activeEffects=m.effects;updateGlobalEffects();}
+}
+
+function showLoading(){document.getElementById('loading').classList.add('show');}
+function hideLoading(){document.getElementById('loading').classList.remove('show');}
+
+function init3D(){
+  const cv=document.getElementById('scene');
+  scn=new THREE.Scene();
+  scn.background=new THREE.Color(0x0a0a12);
+  cam=new THREE.PerspectiveCamera(45,cv.clientWidth/cv.clientHeight,0.1,1000);
+  cam.position.set(0,18,18);
+  cam.lookAt(0,0,0);
+  ren=new THREE.WebGLRenderer({canvas:cv,antialias:true});
+  ren.setSize(cv.clientWidth,cv.clientHeight);
+  ren.shadowMap.enabled=true;
+  scn.add(new THREE.AmbientLight(0xffffff,0.7));
+  const sl=new THREE.DirectionalLight(0xffffff,0.8);
+  sl.position.set(10,20,10);sl.castShadow=true;scn.add(sl);
+  const gr=new THREE.Mesh(new THREE.PlaneGeometry(30,30),new THREE.MeshStandardMaterial({color:0x1a3a1a}));
+  gr.rotation.x=-Math.PI/2;gr.receiveShadow=true;scn.add(gr);
+  
+  T.forEach((t,i)=>{
+    const p=gP(i);
+    let cl=0x2a5a2a;
+    if(t.g==='hk')cl=C.hk;else if(t.g==='sz')cl=C.sz;else if(t.g==='gz')cl=C.gz;else if(t.g==='zm')cl=C.zm;
+    else if(t.type==='start')cl=C.start;else if(t.type==='jail')cl=C.jail;else if(t.type==='c'||t.type==='f')cl=C.chance;else if(t.type==='tax')cl=C.tax;
+    const m=new THREE.Mesh(new THREE.BoxGeometry(TSZ-0.1,0.3,TSZ-0.1),new THREE.MeshStandardMaterial({color:cl}));
+    m.position.set(p.x,0.15,p.z);m.castShadow=true;scn.add(m);ts.push(m);
+  });
+  
+  const ct=new THREE.Mesh(new THREE.BoxGeometry(8,0.4,8),new THREE.MeshStandardMaterial({color:0x1a5c2e}));
+  ct.position.set(0,0.2,0);scn.add(ct);
+  
+  // V1.3: 加载GLB模型
+  gltfLoader=new THREE.GLTFLoader();
+  loadPlayerModels().then(()=>{
+    modelsLoaded=true;
+    hideLoading();
+    createPlayers();
+    uUI();updateRank();
+  }).catch(err=>{
+    console.error('模型加载失败:',err);
+    hideLoading();
+    // 使用备用几何体
+    G.ps.forEach((pl,pi)=>{
+      const g=createFallbackModel(pl.color||PLAYER_COLORS[pi]);
+      scn.add(g);mT(g,0,pi);tks.push(g);
+    });
+    uUI();updateRank();
+  });
+  
+  setupCameraControls(cv);
+  ani();
+  window.onresize=()=>{cam.aspect=cv.clientWidth/cv.clientHeight;cam.updateProjectionMatrix();ren.setSize(cv.clientWidth,cv.clientHeight);};
+}
+
+// V1.3: 加载GLB玩家模型
+async function loadPlayerModels(){
+  const promises=G.ps.map((pl,pi)=>{
+    return new Promise((resolve,reject)=>{
+      const modelFile=PLAYER_MODELS[pi%PLAYER_MODELS.length];
+      const modelPath=MODEL_BASE+modelFile;
+      gltfLoader.load(modelPath,
+        gltf=>{
+          const model=gltf.scene;
+          const scale=pi===0?0.8:pi===1?0.6:pi===2?0.5:0.5;
+          model.scale.set(scale,scale,scale);
+          model.userData.playerIndex=pi;
+          playerModels[pi]=model;
+          resolve(model);
+        },
+        xhr=>console.log(`${modelFile}: ${(xhr.loaded/xhr.total*100||0).toFixed(0)}%`),
+        err=>{console.warn('模型加载失败，使用备用:',modelFile);resolve(null);}
+      );
+    });
+  });
+  return Promise.all(promises);
+}
+
+function createPlayers(){
+  G.ps.forEach((pl,pi)=>{
+    let model;
+    if(playerModels[pi]){
+      model=playerModels[pi].clone();
+      // 设置模型颜色
+      model.traverse(child=>{
+        if(child.isMesh){
+          child.castShadow=true;
+          if(child.material){
+            child.material=new THREE.MeshStandardMaterial({
+              color:pl.color||PLAYER_COLORS[pi],
+              metalness:0.3,
+              roughness:0.7
+            });
+          }
+        }
+      });
+    }else{
+      model=createFallbackModel(pl.color||PLAYER_COLORS[pi]);
+    }
+    scn.add(model);
+    mT(model,0,pi);
+    tks.push(model);
+  });
+}
+
+function createFallbackModel(color){
+  const g=new THREE.Group();
+  const b=new THREE.Mesh(new THREE.CylinderGeometry(0.35,0.4,0.15,16),new THREE.MeshStandardMaterial({color:color}));
+  b.position.y=0.08;g.add(b);
+  const bd=new THREE.Mesh(new THREE.CylinderGeometry(0.25,0.35,0.6,16),new THREE.MeshStandardMaterial({color:color,emissive:color,emissiveIntensity:0.2}));
+  bd.position.y=0.45;g.add(bd);
+  const hd=new THREE.Mesh(new THREE.SphereGeometry(0.2,16,16),new THREE.MeshStandardMaterial({color:color}));
+  hd.position.y=0.85;g.add(hd);
+  g.castShadow=true;
+  return g;
+}
+
+function setupCameraControls(cv){
+  let dg=false,px=0,py=0,th=Math.PI/4,ph=Math.PI/4,rd=25;
+  const uC=()=>{cam.position.set(rd*Math.sin(ph)*Math.cos(th),rd*Math.cos(ph),rd*Math.sin(ph)*Math.sin(th));cam.lookAt(0,0,0);};
+  uC();
+  cv.onmousedown=e=>{dg=true;px=e.clientX;py=e.clientY;};
+  cv.onmousemove=e=>{if(!dg)return;th-=(e.clientX-px)*0.01;ph=Math.max(0.3,Math.min(1.3,ph+(e.clientY-py)*0.01));uC();px=e.clientX;py=e.clientY;};
+  cv.onmouseup=()=>dg=false;
+  cv.ontouchstart=e=>{dg=true;px=e.touches[0].clientX;py=e.touches[0].clientY;};
+  cv.ontouchmove=e=>{if(!dg)return;th-=(e.touches[0].clientX-px)*0.005;ph=Math.max(0.3,Math.min(1.3,ph+(e.touches[0].clientY-py)*0.005));uC();px=e.touches[0].clientX;py=e.touches[0].clientY;};
+  cv.ontouchend=()=>dg=false;
+  cv.onwheel=e=>{rd=Math.max(12,Math.min(35,rd+e.deltaY*0.03));uC();};
+}
+
+function gP(i){
+  const of=BS/2-TSZ/2;
+  if(i<10)return{x:of-i*TSZ,z:of};
+  if(i<20)return{x:-of,z:of-(i-10)*TSZ};
+  if(i<30)return{x:-of+(i-20)*TSZ,z:-of};
+  return{x:of,z:-of+(i-30)*TSZ};
+}
+
+function mT(tk,i,pi){
+  const p=gP(i);
+  const offset=pi===0?-0.3:pi===1?0.3:pi===2?-0.15:0.15;
+  const zOff=pi===2?0.2:pi===3?-0.2:0;
+  tk.position.set(p.x+offset,0,p.z+zOff);
+}
+
+function ani(){requestAnimationFrame(ani);ren.render(scn,cam);}
+
+function uUI(){
+  document.getElementById('st').innerHTML=G.ps.map((p,i)=>`<div class="pcard ${i===G.cp?'on':''}"><span class="avatar">${p.avatar||PLAYER_AVATARS[i]}</span><div><div>${p.n}</div><span class="m">$${p.m.toLocaleString()}</span></div></div>`).join('');
+  document.getElementById('il').innerHTML=G.ps.map((p,i)=>`<div class="pi ${i===G.cp?'on':''}"><span class="avatar">${p.avatar||PLAYER_AVATARS[i]}</span><div><div class="n">${p.n} ${i===G.cp?'◀':''}</div><div class="m">$${p.m.toLocaleString()}</div></div></div>`).join('');
+  document.getElementById('br').disabled=G.ph!=='roll';
+  document.getElementById('bb').style.display=G.ph==='buy'?'inline':'none';
+  document.getElementById('bs').style.display=G.ph==='buy'?'inline':'none';
+  if(G.ph==='roll'&&G.ps[G.cp])showTurnTip(G.ps[G.cp].n);
+  updateRank();
+}
+
+function showTurnTip(name){
+  const tt=document.getElementById('turn-tip');
+  document.getElementById('tt-text').textContent=`🎯 ${name} 的回合`;
+  tt.classList.add('show');
+  setTimeout(()=>tt.classList.remove('show'),2000);
+}
+
+function updateYearDisplay(){document.getElementById('year-display').textContent=`📅 ${G.year}年`;}
+
+function updateEventHistory(){
+  document.getElementById('eh-count').textContent=eventHistory.length;
+  document.getElementById('eh-list').innerHTML=eventHistory.slice(-20).reverse().map(e=>`<div class="item"><span class="year">${e.year}年</span> <span class="type-${e.type}">${TYPE_ICONS[e.type]}${e.name}</span></div>`).join('');
+}
+
+function updateGlobalEffects(){
+  const ge=document.getElementById('global-effects');
+  if(activeEffects.length===0){ge.classList.remove('show');return;}
+  ge.classList.add('show');
+  document.getElementById('ge-list').innerHTML=activeEffects.map(e=>`<div class="effect active">${TYPE_ICONS[e.type]} ${e.name} (${e.remaining}回合)</div>`).join('');
+}
+
+function checkTimelineEvents(){
+  TIMELINE_EVENTS.forEach(ev=>{
+    if(ev.year===G.year&&!triggeredEvents.has(ev.year+'-'+ev.name)){
+      triggeredEvents.add(ev.year+'-'+ev.name);
+      activeEffects.push({...ev,remaining:ev.duration});
+      eventHistory.push({year:ev.year,type:ev.type,name:ev.name,desc:ev.desc});
+      showEvent(TYPE_ICONS[ev.type]+' '+ev.name,ev.desc);
+      updateEventHistory();updateGlobalEffects();
+    }
+  });
+}
+
+function applyEffects(type,value){
+  let result=value;
+  activeEffects.forEach(ef=>{
+    if(ef.effect[type]!==undefined){
+      if(typeof ef.effect[type]==='number'){
+        if(type==='buyCost'||type==='rentMultiplier'||type==='inflation'||type==='taxReduce')result*=ef.effect[type];
+        else result+=ef.effect[type];
+      }
+    }
+  });
+  return Math.floor(result);
+}
+
+function roll(){
+  if(online&&G.ps[G.cp].id!==myId){toast('⚠️ 不是你的回合');return;}
+  let d1=Math.floor(Math.random()*6)+1,d2=Math.floor(Math.random()*6)+1;
+  const minDice=activeEffects.reduce((m,ef)=>Math.max(m,ef.effect.minDice||1),1);
+  d1=Math.max(d1,minDice);d2=Math.max(d2,minDice);
+  document.getElementById('d1').classList.add('ani');document.getElementById('d2').classList.add('ani');
+  document.getElementById('d1').textContent=D[d1-1];document.getElementById('d2').textContent=D[d2-1];
+  setTimeout(()=>{
+    document.getElementById('d1').classList.remove('ani');document.getElementById('d2').classList.remove('ani');
+    let total=d1+d2;
+    const extraMove=activeEffects.reduce((s,ef)=>s+(ef.effect.extraMove||0),0);
+    total+=extraMove;
+    mv(G.cp,total);
+  },600);
+}
+
+function mv(pi,st){
+  const pl=G.ps[pi];
+  if(pl.jail){
+    const d1=Math.floor(Math.random()*6)+1,d2=Math.floor(Math.random()*6)+1;
+    if(d1===d2){pl.jail=false;toast('🎯 双数！出狱');}
+    else{toast('🔒 在狱中');endT();return;}
+  }
+  const op=pl.pos;
+  pl.pos=(pl.pos+st)%40;
+  const startBonus=activeEffects.reduce((s,ef)=>s+(ef.effect.startBonus||0),2000);
+  if(pl.pos<op){pl.m+=startBonus;toast(`🔴 经过起点 +$${startBonus}`);}
+  let c=op;
+  const iv=setInterval(()=>{
+    c=(c+1)%40;
+    mT(tks[pi],c,pi);
+    if(c===pl.pos){clearInterval(iv);hL(pi);}
+  },120);
+}
+
+function hL(pi){
+  const pl=G.ps[pi],t=T[pl.pos];
+  if(t.type==='c'){
+    const ev=EVENTS.chance[Math.floor(Math.random()*EVENTS.chance.length)];
+    const disabled=activeEffects.some(ef=>ef.effect.disableChance&&ef.effect.disableChance.includes(ev.n));
+    showEvent('❓ '+ev.n,disabled?`${ev.n} - 当前政策下失效`:ev.eff(G));
+    endT();return;
+  }
+  if(t.type==='f'){
+    const ev=EVENTS.fate[Math.floor(Math.random()*EVENTS.fate.length)];
+    showEvent('🎴 '+ev.n,ev.eff(G));
+    endT();return;
+  }
+  if((t.type==='p'||t.type==='s')&&!G.pr[pl.pos]&&pl.m>=applyEffects('buyCost',t.p)){
+    G.ph='buy';
+    const price=applyEffects('buyCost',t.p);
+    md(`🏙️ ${t.c||''} ${t.n}`,`价格: $${price}`,`租金: $${t.r}`);
+    uUI();return;
+  }
+  else if((t.type==='p'||t.type==='s')&&G.pr[pl.pos]&&G.pr[pl.pos].o!==pl.id){
+    const ow=G.ps.find(p=>p.id===G.pr[pl.pos].o);
+    let rn=t.r*(1+(G.pr[pl.pos].h||0)*0.5);
+    const rentBonus=activeEffects.reduce((rb,ef)=>{
+      if(ef.effect.rentBonus){
+        if(ef.effect.rentBonus[t.g])rb*=ef.effect.rentBonus[t.g];
+        if(ef.effect.rentBonus.global)rb*=ef.effect.rentBonus.global;
+      }
+      return rb;
+    },1);
+    rn=applyEffects('rentMultiplier',rn*rentBonus);
+    pl.m-=rn;ow.m+=rn;
+    toast(`💸 支付租金 $${Math.floor(rn)}`);
+    if(t.type==='s'){
+      const stationBonus=activeEffects.reduce((s,ef)=>s+(ef.effect.stationBonus||0),0);
+      if(stationBonus>0){ow.m+=stationBonus;toast(`🚗 交通奖励 +$${stationBonus}`);}
+    }
+  }
+  else if(t.type==='tax'){
+    let tax=t.tx;
+    const taxReduce=activeEffects.reduce((r,ef)=>Math.min(r,ef.effect.taxReduce||1),1);
+    tax=Math.floor(tax*taxReduce);
+    const extraTax=activeEffects.reduce((s,ef)=>s+(ef.effect.extraTax||0),0);
+    tax+=extraTax;
+    pl.m-=tax;
+    toast(`💰 缴税 -$${tax}`);
+  }
+  else if(t.type==='go'){pl.pos=10;pl.jail=true;toast('🚔 入狱！');}
+  else if(t.type==='free'){toast('🅿️ 免费停车');}
+  endT();
+}
+
+function showEvent(title,desc){
+  document.getElementById('ev-title').textContent=title;
+  document.getElementById('ev-desc').textContent=desc;
+  document.getElementById('event-box').classList.add('show');
+}
+
+function closeEvent(){document.getElementById('event-box').classList.remove('show');}
+
+function buy(){
+  const pl=G.ps[G.cp],t=T[pl.pos];
+  const price=applyEffects('buyCost',t.p);
+  pl.m-=price;G.pr[pl.pos]={o:pl.id,h:0};pl.pr.push(pl.pos);
+  ts[pl.pos].material.emissive=new THREE.Color(pl.color||PLAYER_COLORS[G.cp]);
+  ts[pl.pos].material.emissiveIntensity=0.4;
+  const h=new THREE.Mesh(new THREE.BoxGeometry(0.3,0.4,0.3),new THREE.MeshStandardMaterial({color:pl.color||PLAYER_COLORS[G.cp],emissive:pl.color||PLAYER_COLORS[G.cp],emissiveIntensity:0.3}));
+  const p=gP(pl.pos);h.position.set(p.x+0.3,0.5,p.z+0.3);scn.add(h);
+  cM();toast(`🏆 购买 ${t.n}`);endT();
+}
+
+function skip(){cM();endT();}
+
+function endT(){
+  G.ph='roll';
+  G.turn++;
+  if(G.turn%10===0){G.year++;updateYearDisplay();checkTimelineEvents();}
+  activeEffects=activeEffects.filter(ef=>{ef.remaining--;return ef.remaining>0;});
+  updateGlobalEffects();updateRank();
+  if(!online){
+    G.cp=(G.cp+1)%G.ps.length;
+    if(G.cp!==0){
+      uUI();
+      setTimeout(()=>{
+        if(G.ps[G.cp].jail){
+          if(Math.floor(Math.random()*6)+1===Math.floor(Math.random()*6)+1){G.ps[G.cp].jail=false;toast(`${PLAYER_AVATARS[G.cp]} 出狱`);}
+          else{toast(`🔒 ${G.ps[G.cp].n}在狱中`);endT();return;}
+        }
+        const d1=Math.floor(Math.random()*6)+1,d2=Math.floor(Math.random()*6)+1;
+        document.getElementById('d1').textContent=D[d1-1];document.getElementById('d2').textContent=D[d2-1];
+        const cpu=G.ps[G.cp];
+        cpu.pos=(cpu.pos+d1+d2)%40;
+        mT(tks[G.cp],cpu.pos,G.cp);
+        const t=T[cpu.pos];
+        if((t.type==='p'||t.type==='s')&&!G.pr[cpu.pos]&&cpu.m>=t.p){
+          cpu.m-=t.p;G.pr[cpu.pos]={o:cpu.id,h:0};cpu.pr.push(cpu.pos);
+          ts[cpu.pos].material.emissive=new THREE.Color(cpu.color||PLAYER_COLORS[G.cp]);
+          ts[cpu.pos].material.emissiveIntensity=0.4;
+          toast(`${PLAYER_AVATARS[G.cp]} 购买 ${t.n}`);
+        }
+        if(t.type==='c'||t.type==='f'){
+          const evs=t.type==='c'?EVENTS.chance:EVENTS.fate;
+          const ev=evs[Math.floor(Math.random()*evs.length)];
+          toast(`${PLAYER_AVATARS[G.cp]}: ${ev.n}`);
+          ev.eff(G);
+        }
+        endT();
+      },1000);
+    }else{uUI();}
+  }else{ws.send(JSON.stringify({type:'endTurn'}));uUI();}
+}
+
+function md(t,p,r){
+  document.getElementById('mb').innerHTML=`<h2>${t}</h2><p>${p}</p><p>${r}</p><div style="margin-top:14px"><button class="btn2 b2" onclick="buy()">💰 购买</button><button class="btn2 b3" onclick="skip()">跳过</button></div>`;
+  document.getElementById('modal').classList.add('show');
+}
+
+function cM(){document.getElementById('modal').classList.remove('show');}
+
+function toast(m){
+  const e=document.querySelector('.tst')||document.createElement('div');
+  e.className='tst';
+  e.style.cssText='position:fixed;top:55px;left:50%;transform:translateX(-50%);background:#ffd700;color:#000;padding:6px 14px;border-radius:6px;font-size:11px;z-index:500;max-width:90%;text-align:center';
+  e.textContent=m;
+  document.body.appendChild(e);
+  setTimeout(()=>e.remove(),2500);
+}
+</script>
+</body>
+</html>

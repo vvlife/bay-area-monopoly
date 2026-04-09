@@ -1,0 +1,14 @@
+{
+  "current": "v1.8",
+  "versions": [
+    {"id": "v1.0", "name": "初始版本", "status": "完成"},
+    {"id": "v1.1", "name": "联机版+事件系统", "status": "完成"},
+    {"id": "v1.2", "name": "AI时间线+增强事件", "status": "完成"},
+    {"id": "v1.3", "name": "GLB模型+聊天+排行榜", "status": "完成"},
+    {"id": "v1.4", "name": "莫兰迪UI+修复模型", "status": "完成"},
+    {"id": "v1.5", "name": "大湾区真实地形", "status": "完成"},
+    {"id": "v1.6", "name": "地形+建筑+音效", "status": "完成"},
+    {"id": "v1.7", "name": "RPG Roguelike", "status": "完成"},
+    {"id": "v1.8", "name": "真实地图节点移动", "status": "完成"}
+  ]
+}
